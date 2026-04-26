@@ -242,10 +242,19 @@ const QUESTIONS=[
 
 const STORAGE_KEY='quiz2_v2';
 const WORKER_URL='https://weathered-dream-2da0.leavewithu.workers.dev';
+const SHEETS_URL='https://script.google.com/macros/s/AKfycbwfTWkOHwVdhCC1SzwTaf1EpKETU6BonYxOHe0D8IZh3bgjVOMZe2FMlWYPF3tslZnUUQ/exec';
 let apiKey='',round=1,currentIdx=0,activeQueue=[],roundResults={},allHistory=[],wrongLog={};
 
 function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({round,allHistory,wrongLog}))}catch(e){}}
 function load(){try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');if(d.round)round=d.round;if(d.allHistory)allHistory=d.allHistory;if(d.wrongLog)wrongLog=d.wrongLog}catch(e){}}
+
+async function saveToSheets(o,p,x,total){
+  try{
+    const now=new Date();
+    const date=`${now.getFullYear()}.${now.getMonth()+1}.${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+    await fetch(SHEETS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,unit:`주제2 철기문화 ${round}라운드`,total,correct:o,partial:p,wrong:x})});
+  }catch(e){console.log('Sheets 저장 실패',e);}
+}
 function toggleEye(){const i=document.getElementById('apiKeyInput');i.type=i.type==='password'?'text':'password'}
 
 function startQuiz(){
@@ -364,6 +373,7 @@ function showRoundDone(){
   let o=0,p=0,x=0;
   Object.values(roundResults).forEach(r=>{if(r.verdict==='correct')o++;else if(r.verdict==='partial')p++;else x++});
   allHistory.push({round,total:activeQueue.length,o,p,x});save();
+  saveToSheets(o,p,x,activeQueue.length);
   document.getElementById('doneO').textContent=o;
   document.getElementById('doneP').textContent=p;
   document.getElementById('doneX').textContent=x;
