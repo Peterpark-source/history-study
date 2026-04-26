@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>AI 퀴즈 — 주제 2 철기 문화</title>
+<style>
+  :root {
+    --red: #BD0C0F; --red-dark: #791F1F; --red-light: #FCEBEB;
+    --green: #1a6b2e; --green-light: #eaf5ec;
+    --yellow: #f5a623; --yellow-light: #fef8ec;
+    --border: #e2e2e0; --bg: #f5f5f3; --surface: #fff;
+    --text: #1a1a1a; --muted: #666; --hint: #aaa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); font-size: 15px; padding-bottom: 40px; }
+
+  /* ── API 키 화면 ── */
+  #apiScreen {
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px;
+  }
+  .api-card {
+    background: var(--surface); border-radius: 16px; border: 0.5px solid var(--border);
+    padding: 28px 24px; max-width: 480px; width: 100%;
+  }
+  .api-logo { width: 44px; height: 44px; background: var(--red); border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+  .api-logo span { color: #fff; font-size: 22px; font-weight: 700; }
+  .api-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 6px; }
+  .api-card p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 18px; }
+  .api-input-wrap { position: relative; margin-bottom: 10px; }
+  .api-input-wrap input {
+    width: 100%; padding: 12px 44px 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border); font-size: 14px; font-family: monospace;
+    background: var(--bg); color: var(--text); outline: none;
+  }
+  .api-input-wrap input:focus { border-color: var(--red); }
+  .eye-btn {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: var(--hint); font-size: 16px;
+  }
+  .api-submit {
+    width: 100%; padding: 13px; background: var(--red); color: #fff;
+    border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+    cursor: pointer; margin-top: 4px;
+  }
+  .api-submit:active { opacity: 0.85; }
+  .api-note { font-size: 11px; color: var(--hint); text-align: center; margin-top: 12px; line-height: 1.5; }
+  .api-error { font-size: 12px; color: var(--red); margin-top: 6px; display: none; }
+
+  /* ── 헤더 ── */
+  header { background: var(--red); color: #fff; padding: 14px 16px 12px; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .back-btn { color: #fff; text-decoration: none; font-size: 20px; line-height: 1; }
+  header h1 { font-size: 14px; font-weight: 600; }
+  .header-stats { display: flex; gap: 12px; font-size: 12px; }
+  .hstat { display: flex; align-items: center; gap: 4px; }
+  .hstat-dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-o { background: #6ee48a; } .dot-x { background: #f7a0a0; } .dot-partial { background: #fcd97a; }
+
+  /* ── 진행 바 ── */
+  .progress-wrap { background: rgba(255,255,255,0.25); border-radius: 10px; height: 5px; }
+  .progress-fill { height: 5px; border-radius: 10px; background: #fff; transition: width 0.4s; }
+
+  /* ── 메인 콘텐츠 ── */
+  .content { padding: 16px; max-width: 700px; margin: 0 auto; }
+
+  /* ── 문제 카드 ── */
+  .quiz-card {
+    background: var(--surface); border-radius: 14px; border: 0.5px solid var(--border);
+    padding: 20px; margin-bottom: 14px;
+  }
+  .q-meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .q-num { font-size: 11px; font-weight: 600; color: var(--hint); text-transform: uppercase; letter-spacing: 0.5px; }
+  .q-section { font-size: 11px; color: var(--red); background: var(--red-light); padding: 3px 8px; border-radius: 10px; }
+  .q-text { font-size: 16px; font-weight: 500; line-height: 1.55; color: var(--text); margin-bottom: 16px; }
+
+  /* ── 답변 입력 ── */
+  .answer-area textarea {
+    width: 100%; min-height: 80px; padding: 12px 14px; border-radius: 10px;
+    border: 1.5px solid var(--border); font-size: 14px; font-family: inherit;
+    background: var(--bg); color: var(--text); resize: none; outline: none;
+    line-height: 1.6; transition: border-color 0.15s;
+  }
+  .answer-area textarea:focus { border-color: var(--red); }
+  .answer-area textarea::placeholder { color: var(--hint); }
+
+  .submit-btn {
+    width: 100%; margin-top: 10px; padding: 13px;
+    background: var(--red); color: #fff; border: none; border-radius: 10px;
+    font-size: 15px; font-weight: 600; cursor: pointer; transition: opacity 0.1s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .submit-btn:active { opacity: 0.85; }
+  .submit-btn:disabled { background: var(--hint); cursor: not-allowed; }
+  .spinner {
+    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4);
+    border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; display: none;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── 채점 결과 ── */
+  .result-box {
+    margin-top: 12px; padding: 14px 16px; border-radius: 10px;
+    display: none; animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .result-box.correct { background: var(--green-light); border: 1px solid #b8dfc2; }
+  .result-box.wrong { background: var(--red-light); border: 1px solid #f7c1c1; }
+  .result-box.partial { background: var(--yellow-light); border: 1px solid #fcd97a; }
+
+  .result-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .result-icon { font-size: 18px; }
+  .result-label { font-size: 14px; font-weight: 600; }
+  .result-box.correct .result-label { color: var(--green); }
+  .result-box.wrong .result-label { color: var(--red-dark); }
+  .result-box.partial .result-label { color: #8a5c00; }
+  .result-feedback { font-size: 13px; line-height: 1.6; color: var(--muted); }
+  .result-answer { margin-top: 8px; font-size: 13px; }
+  .result-answer strong { color: var(--text); }
+
+  /* ── 네비게이션 ── */
+  .nav-area { display: flex; gap: 10px; margin-top: 16px; }
+  .nav-btn {
+    flex: 1; padding: 13px; border-radius: 10px; font-size: 14px; font-weight: 600;
+    cursor: pointer; border: 1.5px solid var(--border); background: var(--surface);
+    color: var(--text); transition: all 0.1s;
+  }
+  .nav-btn:active { background: var(--bg); }
+  .nav-btn.primary { background: var(--red); color: #fff; border-color: var(--red); }
+
+  /* ── 완료 화면 ── */
+  #doneScreen { display: none; padding: 40px 20px; text-align: center; max-width: 500px; margin: 0 auto; }
+  .done-emoji { font-size: 56px; margin-bottom: 16px; }
+  .done-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+  .done-sub { font-size: 14px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+  .score-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 24px; }
+  .score-card { background: var(--surface); border-radius: 12px; border: 0.5px solid var(--border); padding: 14px 10px; }
+  .score-num { font-size: 26px; font-weight: 700; margin-bottom: 2px; }
+  .score-label { font-size: 11px; color: var(--hint); }
+  .score-card.o .score-num { color: var(--green); }
+  .score-card.x .score-num { color: var(--red); }
+  .score-card.p .score-num { color: var(--yellow); }
+  .retry-btn {
+    width: 100%; padding: 14px; background: var(--red); color: #fff;
+    border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; margin-bottom: 10px;
+  }
+  .wrong-only-btn {
+    width: 100%; padding: 14px; background: var(--surface); color: var(--red);
+    border: 1.5px solid var(--red); border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+
+  /* ── API 키 배지 ── */
+  .api-badge {
+    display: flex; align-items: center; gap: 6px; font-size: 11px;
+    color: rgba(255,255,255,0.7); cursor: pointer;
+  }
+  .api-dot { width: 6px; height: 6px; border-radius: 50%; background: #6ee48a; }
+</style>
+</head>
+<body>
+
+<!-- API 키 입력 화면 -->
+<div id="apiScreen">
+  <div class="api-card">
+    <div class="api-logo"><span>AI</span></div>
+    <h2>AI 채점 퀴즈</h2>
+    <p>Anthropic API 키를 입력하면 AI가 직접 답변을 채점해줘요.<br>키는 이 기기에만 저장되고 외부로 전송되지 않아요.</p>
+    <div class="api-input-wrap">
+      <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" />
+      <button class="eye-btn" onclick="toggleEye()">👁</button>
+    </div>
+    <div class="api-error" id="apiError">API 키가 올바르지 않아요. 다시 확인해주세요.</div>
+    <button class="api-submit" onclick="startQuiz()">퀴즈 시작</button>
+    <p class="api-note">API 키는 <strong>console.anthropic.com</strong>에서 발급받을 수 있어요.<br>입력된 키는 localStorage에만 저장되며 GitHub에 올라가지 않아요.</p>
+  </div>
+</div>
+
+<!-- 퀴즈 화면 -->
+<div id="quizScreen" style="display:none">
+  <header>
+    <div class="header-top">
+      <div class="header-left">
+        <a class="back-btn" href="index.html">‹</a>
+        <h1>주제 2 — AI 채점 퀴즈</h1>
+      </div>
+      <div class="api-badge" onclick="changeKey()">
+        <div class="api-dot"></div>
+        <span>AI 연결됨</span>
+      </div>
+    </div>
+    <div class="header-stats" style="margin-bottom:8px">
+      <span class="hstat"><span class="hstat-dot dot-o"></span><span id="cntO">0</span>개 정답</span>
+      <span class="hstat"><span class="hstat-dot dot-partial"></span><span id="cntP">0</span>개 부분</span>
+      <span class="hstat"><span class="hstat-dot dot-x"></span><span id="cntX">0</span>개 오답</span>
+    </div>
+    <div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+  </header>
+
+  <div class="content">
+    <div class="quiz-card" id="quizCard">
+      <div class="q-meta">
+        <span class="q-num" id="qNum">Q1 / 21</span>
+        <span class="q-section" id="qSection">철기 문화</span>
+      </div>
+      <div class="q-text" id="qText"></div>
+      <div class="answer-area">
+        <textarea id="answerInput" placeholder="답을 자유롭게 써보세요. 완벽하지 않아도 괜찮아요." rows="3"></textarea>
+        <button class="submit-btn" id="submitBtn" onclick="submitAnswer()">
+          <div class="spinner" id="spinner"></div>
+          <span id="submitLabel">채점하기</span>
+        </button>
+      </div>
+      <div class="result-box" id="resultBox">
+        <div class="result-header">
+          <span class="result-icon" id="resultIcon"></span>
+          <span class="result-label" id="resultLabel"></span>
+        </div>
+        <div class="result-feedback" id="resultFeedback"></div>
+        <div class="result-answer" id="resultAnswer"></div>
+      </div>
+    </div>
+
+    <div class="nav-area" id="navArea" style="display:none">
+      <button class="nav-btn" onclick="prevQ()">◀ 이전</button>
+      <button class="nav-btn primary" id="nextBtn" onclick="nextQ()">다음 ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- 완료 화면 -->
+<div id="doneScreen">
+  <div class="done-emoji">🎯</div>
+  <div class="done-title">퀴즈 완료!</div>
+  <div class="done-sub" id="doneSub"></div>
+  <div class="score-grid">
+    <div class="score-card o"><div class="score-num" id="doneO">0</div><div class="score-label">정답</div></div>
+    <div class="score-card p"><div class="score-num" id="doneP">0</div><div class="score-label">부분 정답</div></div>
+    <div class="score-card x"><div class="score-num" id="doneX">0</div><div class="score-label">오답</div></div>
+  </div>
+  <button class="retry-btn" onclick="retryAll()">전체 다시 풀기</button>
+  <button class="wrong-only-btn" onclick="retryWrong()">오답만 다시 풀기</button>
+</div>
+
+<script>
+const QUESTIONS = [
+  { section:"철기 문화", q:"철은 청동과 비교했을 때 어떤 특징이 있나요?", a:"매장량이 많아 구하기 쉽고, 청동보다 단단해서 무기와 농기구를 만드는 데 적합하다." },
+  { section:"철기 문화", q:"철기 문화가 고조선에서 퍼져 나간 지역은 어디인가요?", a:"만주와 한반도 전역" },
+  { section:"철기 문화", q:"철기로 성장한 나라 5개를 말해보세요.", a:"부여, 고구려, 옥저, 동예, 삼한" },
+  { section:"철기 문화", q:"철기 보급이 가져온 사회적 영향의 흐름을 설명해보세요.", a:"농업 생산력 증가 → 인구 증가 → 각 지역에 정치 세력 형성 → 철제 무기로 주변 지역 정복" },
+  { section:"나라별 핵심", q:"부여의 위치와 정치 형태는 어떠했나요?", a:"만주 평야 지역 / 연맹 형태로 왕권이 약했다." },
+  { section:"나라별 핵심", q:"고구려는 어떤 두 세력이 합쳐서 세워졌나요?", a:"부여에서 온 세력과 압록강 유역의 토착 세력이 연합해 세웠다." },
+  { section:"나라별 핵심", q:"고구려가 정복 국가로 성장한 이유는 무엇인가요?", a:"산간 지역에 위치해 농경에 불리하여 주변 소국들을 정복하며 영토를 확장했다." },
+  { section:"나라별 핵심", q:"옥저와 동예의 위치와 정치적 특징을 설명해보세요.", a:"동해안에 위치하고 토지가 비옥했으며, 왕이 없고 군장들이 각 지역을 다스렸다." },
+  { section:"나라별 핵심", q:"동예의 특산물 3가지는 무엇인가요?", a:"단궁, 반어피, 과하마" },
+  { section:"나라별 핵심", q:"삼한의 경제적 특징을 설명해보세요.", a:"벼농사가 발달했고, 진한과 변한에서는 철을 많이 생산해 낙랑 등에 덩이쇠 형태로 수출했다." },
+  { section:"사회 모습", q:"부여의 사출도에서 4가(군장)는 누구누구인가요?", a:"마가, 우가, 저가, 구가" },
+  { section:"사회 모습", q:"고구려에서 나라의 중요한 일을 결정한 회의는 무엇인가요?", a:"제가 회의 (5부의 지배자들이 참여)" },
+  { section:"사회 모습", q:"부여 1책 12법의 내용은 무엇인가요?", a:"도둑질하면 훔친 것의 12배로 갚도록 했다." },
+  { section:"사회 모습", q:"동예의 책화란 무엇인가요?", a:"각 집단의 영역을 침범하면 노비와 소, 말로 갚도록 하는 법이다." },
+  { section:"사회 모습", q:"부여의 제천 행사 때만 볼 수 있는 특별한 풍습은 무엇인가요?", a:"죄수를 풀어주었다." },
+  { section:"결혼·순장 풍습", q:"고구려의 서옥제를 설명해보세요.", a:"혼인 후 남자가 신붓집 안에 있는 서옥에서 생활하다가 자식이 다 자라면 신랑의 집으로 돌아가는 풍습이다. (처가살이)" },
+  { section:"결혼·순장 풍습", q:"옥저의 민며느리제를 설명해보세요.", a:"신랑집이 어린 신부를 데려와 키우다가, 신부가 성인이 되면 신랑집이 신부집에 재물을 내는 풍습이다." },
+  { section:"결혼·순장 풍습", q:"순장 풍습이 있었던 나라는 어디인가요?", a:"부여 (고구려, 신라, 가야에도 나타남)" },
+  { section:"제천행사·소도", q:"제천 행사의 의미와 시기는 언제인가요?", a:"풍요를 기원하며 하늘에 지내는 제사로, 농사를 시작하거나 끝날 때 열었다." },
+  { section:"제천행사·소도", q:"삼한의 소도에 대해 설명해보세요.", a:"천군(제사장)이 제사를 지내는 신성한 구역으로, 왕과 군장도 침범할 수 없고 죄인이 숨어도 잡지 못했다. 제정분리 사회를 보여준다." },
+  { section:"제천행사·소도", q:"솟대는 어디에서 유래했나요?", a:"소도에서 세우던 것에서 유래했다." }
+];
+
+const STORAGE_KEY = 'quiz2_results';
+let apiKey = '';
+let currentIdx = 0;
+let results = {}; // idx -> { verdict, feedback, userAnswer }
+let activeQueue = [];
+
+function toggleEye() {
+  const inp = document.getElementById('apiKeyInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function startQuiz() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    document.getElementById('apiError').style.display = 'block';
+    return;
+  }
+  apiKey = key;
+  try { localStorage.setItem('quiz_api_key', key); } catch(e) {}
+  document.getElementById('apiScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  activeQueue = QUESTIONS.map((_, i) => i);
+  loadSavedResults();
+  showQuestion();
+}
+
+function loadSavedResults() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) Object.assign(results, JSON.parse(saved));
+  } catch(e) {}
+}
+
+function saveResults() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(results)); } catch(e) {}
+}
+
+function changeKey() {
+  if (!confirm('API 키를 변경할까요?')) return;
+  document.getElementById('quizScreen').style.display = 'none';
+  document.getElementById('apiScreen').style.display = 'flex';
+}
+
+function showQuestion() {
+  const idx = activeQueue[currentIdx];
+  const q = QUESTIONS[idx];
+
+  document.getElementById('qNum').textContent = `Q${currentIdx + 1} / ${activeQueue.length}`;
+  document.getElementById('qSection').textContent = q.section;
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('progressFill').style.width = Math.round((currentIdx / activeQueue.length) * 100) + '%';
+
+  const inp = document.getElementById('answerInput');
+  inp.value = results[idx]?.userAnswer || '';
+  inp.disabled = !!results[idx];
+
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.style.display = results[idx] ? 'none' : 'flex';
+
+  const resultBox = document.getElementById('resultBox');
+  if (results[idx]) {
+    showResult(results[idx]);
+    resultBox.style.display = 'block';
+    document.getElementById('navArea').style.display = 'flex';
+  } else {
+    resultBox.style.display = 'none';
+    document.getElementById('navArea').style.display = 'none';
+  }
+
+  updateStats();
+
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = currentIdx === activeQueue.length - 1 ? '결과 보기' : '다음 ▶';
+}
+
+function showResult(data) {
+  const box = document.getElementById('resultBox');
+  box.className = 'result-box ' + data.verdict;
+  box.style.display = 'block';
+
+  const icons = { correct: '✅', partial: '🟡', wrong: '❌' };
+  const labels = { correct: '정답이에요!', partial: '부분 정답이에요', wrong: '다시 공부해봐요' };
+  document.getElementById('resultIcon').textContent = icons[data.verdict];
+  document.getElementById('resultLabel').textContent = labels[data.verdict];
+  document.getElementById('resultFeedback').textContent = data.feedback;
+
+  const answerEl = document.getElementById('resultAnswer');
+  if (data.verdict !== 'correct') {
+    answerEl.innerHTML = `<strong>모범 답안:</strong> ${QUESTIONS[activeQueue[currentIdx]].a}`;
+  } else {
+    answerEl.innerHTML = '';
+  }
+}
+
+async function submitAnswer() {
+  const userAnswer = document.getElementById('answerInput').value.trim();
+  if (!userAnswer) return;
+
+  const idx = activeQueue[currentIdx];
+  const q = QUESTIONS[idx];
+
+  const submitBtn = document.getElementById('submitBtn');
+  const spinner = document.getElementById('spinner');
+  const label = document.getElementById('submitLabel');
+
+  submitBtn.disabled = true;
+  spinner.style.display = 'block';
+  label.textContent = 'AI 채점 중...';
+
+  try {
+    const prompt = `당신은 한국 역사 시험 채점관입니다.
+
+문제: ${q.q}
+모범 답안: ${q.a}
+학생 답변: ${userAnswer}
+
+학생의 답변이 핵심 개념을 얼마나 이해하고 있는지 평가해주세요.
+
+평가 기준:
+- correct: 핵심 개념을 모두 정확히 알고 있음 (표현이 달라도 OK)
+- partial: 핵심 개념 일부만 알고 있거나, 중요한 내용이 빠져 있음
+- wrong: 핵심 개념을 모르거나 틀린 내용을 답변함
+
+반드시 아래 JSON 형식으로만 응답하세요:
+{"verdict":"correct/partial/wrong","feedback":"한 두 문장으로 구체적인 피드백 (한국어)"}`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.error) throw new Error(data.error.message);
+
+    const text = data.content[0].text.trim();
+    const parsed = JSON.parse(text);
+
+    results[idx] = { verdict: parsed.verdict, feedback: parsed.feedback, userAnswer };
+    saveResults();
+    showResult(results[idx]);
+
+    document.getElementById('answerInput').disabled = true;
+    submitBtn.style.display = 'none';
+    document.getElementById('navArea').style.display = 'flex';
+    updateStats();
+
+  } catch(e) {
+    label.textContent = '채점 실패 — 다시 시도';
+    submitBtn.disabled = false;
+    spinner.style.display = 'none';
+    console.error(e);
+  }
+}
+
+function updateStats() {
+  let o = 0, p = 0, x = 0;
+  activeQueue.forEach(idx => {
+    const r = results[idx];
+    if (!r) return;
+    if (r.verdict === 'correct') o++;
+    else if (r.verdict === 'partial') p++;
+    else x++;
+  });
+  document.getElementById('cntO').textContent = o;
+  document.getElementById('cntP').textContent = p;
+  document.getElementById('cntX').textContent = x;
+}
+
+function nextQ() {
+  if (currentIdx < activeQueue.length - 1) {
+    currentIdx++;
+    showQuestion();
+  } else {
+    showDone();
+  }
+}
+
+function prevQ() {
+  if (currentIdx > 0) { currentIdx--; showQuestion(); }
+}
+
+function showDone() {
+  document.getElementById('quizScreen').style.display = 'none';
+  const done = document.getElementById('doneScreen');
+  done.style.display = 'block';
+
+  let o = 0, p = 0, x = 0;
+  activeQueue.forEach(idx => {
+    const r = results[idx];
+    if (!r) return;
+    if (r.verdict === 'correct') o++;
+    else if (r.verdict === 'partial') p++;
+    else x++;
+  });
+
+  document.getElementById('doneO').textContent = o;
+  document.getElementById('doneP').textContent = p;
+  document.getElementById('doneX').textContent = x;
+
+  const total = activeQueue.length;
+  const score = Math.round((o + p * 0.5) / total * 100);
+  document.getElementById('doneSub').textContent =
+    `${total}문제 중 정답 ${o}개, 부분 정답 ${p}개, 오답 ${x}개\n예상 점수: ${score}점`;
+}
+
+function retryAll() {
+  results = {};
+  saveResults();
+  currentIdx = 0;
+  activeQueue = QUESTIONS.map((_, i) => i);
+  document.getElementById('doneScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  showQuestion();
+}
+
+function retryWrong() {
+  const wrongIdxs = activeQueue.filter(idx => {
+    const r = results[idx];
+    return !r || r.verdict === 'wrong' || r.verdict === 'partial';
+  });
+  if (wrongIdxs.length === 0) { alert('오답이 없어요! 전체를 다시 풀어보세요.'); return; }
+  wrongIdxs.forEach(idx => delete results[idx]);
+  saveResults();
+  activeQueue = wrongIdxs;
+  currentIdx = 0;
+  document.getElementById('doneScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  showQuestion();
+}
+
+// 초기화 — 저장된 키 자동 입력
+window.addEventListener('load', () => {
+  try {
+    const saved = localStorage.getItem('quiz_api_key');
+    if (saved) document.getElementById('apiKeyInput').value = saved;
+  } catch(e) {}
+
+  // 엔터키로 제출
+  document.getElementById('answerInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.metaKey) submitAnswer();
+  });
+});
+</script>
+</body>
+</html>
