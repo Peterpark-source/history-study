@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>오답 퀴즈 — 실제 시험 틀린 문제</title>
+<style>
+  :root{--red:#BD0C0F;--red-dark:#791F1F;--red-light:#FCEBEB;--green:#1a6b2e;--green-light:#eaf5ec;--yellow:#d48a00;--yellow-light:#fef8ec;--border:#e2e2e0;--bg:#f5f5f3;--surface:#fff;--text:#1a1a1a;--muted:#666;--hint:#aaa}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,"Helvetica Neue",sans-serif;background:var(--bg);color:var(--text);font-size:15px;padding-bottom:40px}
+  header{background:var(--red);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:100}
+  .header-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .header-left{display:flex;align-items:center;gap:10px}
+  .back-btn{color:#fff;text-decoration:none;font-size:20px;line-height:1}
+  header h1{font-size:14px;font-weight:600}
+  .round-badge{background:rgba(255,255,255,0.25);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .header-stats{display:flex;gap:12px;font-size:12px;margin-bottom:8px}
+  .hstat{display:flex;align-items:center;gap:4px}
+  .hstat-dot{width:7px;height:7px;border-radius:50%}
+  .dot-o{background:#6ee48a}.dot-x{background:#f7a0a0}.dot-partial{background:#fcd97a}
+  .progress-wrap{background:rgba(255,255,255,0.25);border-radius:10px;height:5px}
+  .progress-fill{height:5px;border-radius:10px;background:#fff;transition:width 0.4s}
+  .content{padding:16px;max-width:700px;margin:0 auto}
+  .quiz-card{background:var(--surface);border-radius:14px;border:0.5px solid var(--border);padding:20px;margin-bottom:14px}
+  .q-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:6px}
+  .q-num{font-size:11px;font-weight:600;color:var(--hint);text-transform:uppercase;letter-spacing:0.5px}
+  .q-section{font-size:11px;color:var(--red);background:var(--red-light);padding:3px 8px;border-radius:10px}
+  .q-text{font-size:15px;font-weight:500;line-height:1.6;margin-bottom:10px}
+  .q-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px;padding:10px 12px;background:var(--bg);border-radius:8px;border-left:3px solid var(--border)}
+  .choices{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+  .choice{padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);font-size:14px;cursor:pointer;background:var(--surface);color:var(--text);text-align:left;line-height:1.5;transition:all 0.12s}
+  .choice:active{transform:scale(0.98)}
+  .choice.selected{border-color:var(--red);background:var(--red-light);color:var(--red-dark)}
+  .choice.correct{border-color:var(--green);background:var(--green-light);color:var(--green)}
+  .choice.wrong-pick{border-color:var(--red);background:var(--red-light);color:var(--red-dark)}
+  .result-box{margin-top:12px;padding:14px 16px;border-radius:10px;display:none;animation:fadeIn 0.2s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+  .result-box.correct{background:var(--green-light);border:1px solid #b8dfc2}
+  .result-box.wrong{background:var(--red-light);border:1px solid #f7c1c1}
+  .result-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .result-icon{font-size:18px}
+  .result-label{font-size:14px;font-weight:600}
+  .result-box.correct .result-label{color:var(--green)}
+  .result-box.wrong .result-label{color:var(--red-dark)}
+  .result-explain{font-size:13px;line-height:1.6;color:var(--muted);margin-top:4px}
+  .nav-area{display:flex;gap:10px;margin-top:16px}
+  .nav-btn{flex:1;padding:13px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--text)}
+  .nav-btn.primary{background:var(--red);color:#fff;border-color:var(--red)}
+  #doneScreen{display:none;padding:32px 20px;max-width:500px;margin:0 auto;text-align:center}
+  .done-emoji{font-size:52px;margin-bottom:14px}
+  .done-title{font-size:20px;font-weight:700;margin-bottom:6px}
+  .done-sub{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6}
+  .score-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+  .score-card{background:var(--surface);border-radius:12px;border:0.5px solid var(--border);padding:14px 10px}
+  .score-num{font-size:26px;font-weight:700;margin-bottom:2px}
+  .score-label{font-size:11px;color:var(--hint)}
+  .score-card.o .score-num{color:var(--green)}
+  .score-card.x .score-num{color:var(--red)}
+  .action-btn{width:100%;padding:14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;margin-bottom:10px;border:none}
+  .action-btn.primary{background:var(--red);color:#fff}
+  .action-btn.ghost{background:var(--surface);color:var(--muted);border:1.5px solid var(--border)}
+  .wrong-review{margin-top:20px;text-align:left}
+  .wrong-review h3{font-size:14px;font-weight:600;margin-bottom:12px;color:var(--red-dark)}
+  .wrong-item{background:var(--surface);border-radius:10px;border:0.5px solid var(--border);padding:12px 14px;margin-bottom:8px}
+  .wrong-item-q{font-size:13px;font-weight:500;margin-bottom:4px}
+  .wrong-item-a{font-size:12px;color:var(--green);margin-bottom:2px}
+  .wrong-item-exp{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="header-left">
+      <a class="back-btn" href="index.html">‹</a>
+      <h1>실제 시험 오답 퀴즈</h1>
+    </div>
+    <span class="round-badge" id="roundBadge">1라운드</span>
+  </div>
+  <div class="header-stats">
+    <span class="hstat"><span class="hstat-dot dot-o"></span><span id="cntO">0</span>개 정답</span>
+    <span class="hstat"><span class="hstat-dot dot-x"></span><span id="cntX">0</span>개 오답</span>
+  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+</header>
+
+<div id="quizScreen">
+  <div class="content">
+    <div class="quiz-card" id="quizCard">
+      <div class="q-meta">
+        <span class="q-num" id="qNum">Q1 / 28</span>
+        <span class="q-section" id="qSection"></span>
+      </div>
+      <div class="q-text" id="qText"></div>
+      <div class="q-sub" id="qSub" style="display:none"></div>
+      <div class="choices" id="choices"></div>
+      <div class="result-box" id="resultBox">
+        <div class="result-header">
+          <span class="result-icon" id="resultIcon"></span>
+          <span class="result-label" id="resultLabel"></span>
+        </div>
+        <div class="result-explain" id="resultExplain"></div>
+      </div>
+    </div>
+    <div class="nav-area" id="navArea" style="display:none">
+      <button class="nav-btn" onclick="prevQ()">◀ 이전</button>
+      <button class="nav-btn primary" id="nextBtn" onclick="nextQ()">다음 ▶</button>
+    </div>
+  </div>
+</div>
+
+<div id="doneScreen">
+  <div class="done-emoji" id="doneEmoji">🎯</div>
+  <div class="done-title" id="doneTitle">결과</div>
+  <div class="done-sub" id="doneSub"></div>
+  <div class="score-grid">
+    <div class="score-card o"><div class="score-num" id="doneO">0</div><div class="score-label">정답</div></div>
+    <div class="score-card x"><div class="score-num" id="doneX">0</div><div class="score-label">오답</div></div>
+  </div>
+  <button class="action-btn primary" id="retryBtn" onclick="retryWrong()"></button>
+  <button class="action-btn ghost" onclick="retryAll()">전체 다시 풀기</button>
+  <div class="wrong-review" id="wrongReview"></div>
+</div>
+
+<script>
+const QUESTIONS = [
+  // 주제 1 — 청동기·고조선
+  {
+    section:"주제1 청동기·고조선",
+    q:"고조선이 한을 견제하기 위해 관계를 맺은 유목 민족은?",
+    sub:"",
+    choices:["선비","흉노","돌궐","말갈","거란"],
+    answer:1,
+    explain:"고조선은 흉노와 관계를 맺어 한(漢)을 견제하려 했다."
+  },
+  {
+    section:"주제1 청동기·고조선",
+    q:"고조선이 개인이나 집단 간의 갈등을 조정하고, 범죄에 대해 엄격히 처벌하는 근거가 된 법은?",
+    sub:"",
+    choices:["화랑도","8조법","1책12법","책화","소도"],
+    answer:1,
+    explain:"고조선의 8조법(8조 금법)은 사회 질서를 유지하기 위한 법률이다."
+  },
+  {
+    section:"주제1 청동기·고조선",
+    q:"한이 고조선 정복 후 설치한 4개의 군 중 가장 오래 유지된 지역은?",
+    sub:"",
+    choices:["임둔군","진번군","현도군","낙랑군","대방군"],
+    answer:3,
+    explain:"낙랑군이 4개의 군 중 가장 오래 유지되었다."
+  },
+  {
+    section:"주제1 청동기·고조선",
+    q:"다음 자료가 설명하는 시대의 명칭을 고르시오.",
+    sub:"만주와 한반도 지역에서 15세기경 시작된 이 시대의 대표적 무덤은 고인돌이었습니다. 고인돌을 만드는 데는 많은 사람의 노동력이 필요했습니다.",
+    choices:["신석기 시대","청동기 시대","철기 시대","구석기 시대","초기 국가 시대"],
+    answer:1,
+    explain:"고인돌은 청동기 시대의 대표적인 무덤이다. 기원전 15세기경 만주와 한반도에서 청동기 문화가 시작되었다."
+  },
+  {
+    section:"주제1 청동기·고조선",
+    q:"단군왕검 이야기에 대한 탐구 활동으로 가장 적절한 것은?",
+    sub:"환인(하늘의 신)의 아들인 환웅은 바람, 비, 구름을 다스리는 풍백, 우사, 운사를 포함한 3,000명을 거느리고 내려와 인간 세상을 다스렸다. … 단군왕검은 평양성을 도읍으로 정하고 나라 이름을 '조선'이라고 했다.",
+    choices:["불교 수용의 영향을 알아본다.","율령 반포의 배경을 파악한다.","우경을 장려한 배경을 조사한다.","제정일치 사회의 특징을 정리한다.","순장 풍습 형성의 과정을 분석한다."],
+    answer:3,
+    explain:"단군(제사장) + 왕검(정치 지배자) = 한 사람이 종교와 정치를 모두 담당 → 제정일치 사회를 보여준다."
+  },
+
+  // 주제 3 — 삼국과 가야의 성장
+  {
+    section:"주제3 삼국·가야 성장",
+    q:"뇌 구조 안에 들어갈 내용으로 옳은 것을 보기에서 골라 쓰시오. (고구려의 성장 관련)",
+    sub:"보기: ㄱ.사비 천도 / ㄴ.마한 병합 / ㄷ.옥저 정복 / ㄹ.고씨 왕위 세습",
+    choices:["ㄱ, ㄴ","ㄴ, ㄷ","ㄷ, ㄹ","ㄱ, ㄷ","ㄴ, ㄹ"],
+    answer:2,
+    explain:"고구려의 성장과 관련된 것은 '옥저 정복'과 '고씨 왕위 세습'이다. 사비 천도와 마한 병합은 백제와 관련된 내용이다."
+  },
+  {
+    section:"주제3 삼국·가야 성장",
+    q:"진한의 소국 중 하나였던 ( )은/는 이후 신라로 발전했다.",
+    sub:"",
+    choices:["마한","변한","사로국","낙랑","우산국"],
+    answer:2,
+    explain:"진한의 소국 중 하나였던 사로국이 신라로 발전했다."
+  },
+  {
+    section:"주제3 삼국·가야 성장",
+    q:"마한의 소국 중 하나였던 ( )은/는 고구려에서 내려온 세력과 한강 유역의 토착 세력이 연합해 세운 나라이다.",
+    sub:"",
+    choices:["가야","신라","백제","부여","사로국"],
+    answer:2,
+    explain:"마한의 소국 중 하나에서 시작한 백제는 고구려에서 내려온 세력 + 한강 유역 토착 세력이 연합해 세웠다."
+  },
+  {
+    section:"주제3 삼국·가야 성장",
+    q:"신라는 중국 문물을 받아들이기 어려운 한반도 동남쪽에 자리 잡아 ( )의 마련이 늦었다.",
+    sub:"",
+    choices:["율령","화랑도","중앙 집권 체제","골품제","불교"],
+    answer:2,
+    explain:"신라는 한반도 동남쪽에 위치해 중국 문물 수용이 어려워 중앙 집권 체제 마련이 늦었다."
+  },
+  {
+    section:"주제3 삼국·가야 성장",
+    q:"초기에 가야 연맹을 이끈 ( )은/는 해상 교역으로 질 좋은 ( )을/를 낙랑군, 왜 등에 수출했다.",
+    sub:"",
+    choices:["대가야 / 토기","금관가야 / 덩이쇠","금관가야 / 반어피","대가야 / 덩이쇠","금관가야 / 과하마"],
+    answer:1,
+    explain:"초기 가야 연맹은 금관가야가 주도했으며, 질 좋은 덩이쇠(철)를 낙랑군, 왜 등에 수출했다."
+  },
+
+  // 주제 4 — 삼국과 가야의 경쟁과 발전
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"(가) 지역이 백제의 수도였던 시기에 관한 탐구 주제로 가장 적절한 것은? (가=웅진/공주)",
+    sub:"",
+    choices:["순장 금지의 영향","마한 소국 정복 활동","무령왕릉의 조성 과정","국호를 남부여로 변경한 배경","신라 왕실과 혼인을 추진한 결과"],
+    answer:2,
+    explain:"웅진(공주) 시기의 대표적 사건은 무령왕릉이다. 무령왕은 중국 남조·왜와 외교, 왕족을 지방에 파견했다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"고구려 소수림왕의 정책으로 옳은 것만을 보기에서 고른 것은?",
+    sub:"ㄱ. 율령을 반포했다. / ㄴ. 불교를 받아들였다. / ㄷ. 김씨가 왕위를 세습하기 시작했다. / ㄹ. 화랑도를 국가적인 조직으로 키웠다.",
+    choices:["ㄱ, ㄴ","ㄱ, ㄷ","ㄴ, ㄷ","ㄴ, ㄹ","ㄷ, ㄹ"],
+    answer:0,
+    explain:"소수림왕은 율령 반포, 불교 수용, 태학 설치를 했다. 김씨 왕위 세습은 신라 내물왕, 화랑도 국가 조직화는 신라 진흥왕이다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"삼국이 중앙 집권 국가로 자리 잡는 동안 공통으로 거친 과정이 아닌 것은?",
+    sub:"",
+    choices:["세습으로 왕위를 계승했어.","정복 전쟁과 영토 확장을 했어.","율령을 반포하고 통치 체제를 정비했어.","불교를 수용하고 왕을 부처와 동일시했어.","유교적 소양을 갖춘 인재를 키우기 위해 학교를 설립했어."],
+    answer:1,
+    explain:"정복 전쟁과 영토 확장은 삼국이 공통으로 거친 과정이 맞다. 오답은 ②번이 아니라 공통 과정에 해당하므로 정답은 ②번이다. 정복 전쟁은 공통 과정이 맞지만, 영토 확장 방식은 각국마다 달랐다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"경주에서 발견된 호우명에 이 인물을 가리키는 글이 적혀 있어 당시 고구려와 신라의 관계를 추측할 수 있다. 이 인물에 대한 설명으로 옳은 것은?",
+    sub:"검색어: 박물관 기념품 / 제품명: 호우명 그립톡 / 경주에서 발견된 호우명에는 이 인물을 가리키는 글이 적혀 있습니다.",
+    choices:["율령을 반포했다.","태학을 설립했다.","칠지도를 제작했다.","금관가야를 공격했다.","충주 고구려비를 건립했다."],
+    answer:3,
+    explain:"호우명은 광개토왕을 기리는 유물이다. 광개토왕은 금관가야를 공격(신라에 침입한 왜 격파 과정)했다. 태학 설립은 소수림왕, 칠지도는 백제 근초고왕이다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"5세기에 (가)은/는 중국 남북조 시대의 분열을 이용해 안정적인 외교 정책을 펼쳤으며, 평야 지대였던 평양으로 수도를 옮겼다. (가) 왕의 정책으로 옳은 것은?",
+    sub:"",
+    choices:["남진 정책을 추진했다.","신라와 동맹을 맺었다.","낙동강 유역으로 진출했다.","'영락'이라는 연호를 사용했다.","왕호를 마립간에서 '왕'으로 바꿨다."],
+    answer:0,
+    explain:"장수왕은 평양 천도 후 남진 정책을 추진해 한강 이남까지 영토를 확장했다. 낙동강 진출은 신라 법흥왕, 영락 연호는 광개토왕, 마립간→왕은 신라 지증왕이다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"(가) 문화유산에 묻힌 인물에 대한 탐구 활동으로 가장 적절한 것은? (가=무령왕릉, 석수·금송 목관·연꽃무늬 벽돌 출토)",
+    sub:"",
+    choices:["순장을 금지한 원인을 조사한다.","금관가야를 정복한 영향을 알아본다.","평양으로 수도를 옮긴 과정을 정리한다.","율령을 반포하고 불교를 수용한 내용을 분석한다.","지방에 왕족을 파견해 지방 통제를 강화한 배경을 파악한다."],
+    answer:4,
+    explain:"무령왕은 지방에 왕족을 파견해 통치력을 강화했다. 석수(중국), 금송 목관(일본), 연꽃무늬 벽돌(남조)은 백제 무령왕릉에서 나온 유물이다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"다음 변화 과정에서 일어난 사실로 옳지 않은 것은? (연맹왕국 → 중앙집권국가)",
+    sub:"군장-군장-왕-군장-군장 → 왕 아래 귀족-귀족-귀족-귀족",
+    choices:["불교를 공인했다.","점점 아들에게 왕위를 계승했다.","중요한 일은 귀족들의 합의로 이루어졌다.","주변 나라들을 정복하면서 영토를 넓혔다.","중국에서 율령을 수용해 국가 운영에 필요한 제도를 마련했다."],
+    answer:2,
+    explain:"중앙집권국가로 발전하면서 왕권이 강화되어 귀족 합의 방식은 약화되었다. 나머지는 모두 중앙집권화 과정에서 있었던 사실이다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"신라와 관련 있는 사실로 옳은 것만을 보기에서 고른 것은?",
+    sub:"ㄱ. 마한 병합 / ㄴ. 낙랑군 정복 / ㄷ. 나제 동맹 체결 / ㄹ. '마립간' 왕호 사용",
+    choices:["ㄱ, ㄴ","ㄱ, ㄷ","ㄴ, ㄷ","ㄴ, ㄹ","ㄷ, ㄹ"],
+    answer:4,
+    explain:"신라는 나제 동맹(나=신라, 제=백제) 체결과 '마립간' 왕호 사용(내물왕)이 관련 있다. 마한 병합은 백제, 낙랑군 정복은 고구려다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"(가) 가야 연맹에 대한 설명으로 옳은 것은? (가=가야, 지산동 고분군 / 김해 대성동 고분군)",
+    sub:"낙동강 중·하류 지역의 (가) 연맹은 풍부한 철과 우수한 제철 기술을 바탕으로 발전했다. 그러나 6세기에 들어 이웃 나라인 백제와 신라의 세력 확장에 밀리면서 점차 쇠퇴했고, 결국 소멸했다.",
+    choices:["평양으로 수도를 옮겼다.","'영락'이라는 연호를 사용했다.","백제, 왜와 연합해 신라를 공격했다.","백제와 동맹을 깨고 한강 유역을 차지했다.","동해안을 따라 함흥평야까지 영토를 넓혔다."],
+    answer:2,
+    explain:"가야는 세력 유지를 위해 백제·왜와 연합해 신라를 공격했다. 평양 천도와 영락 연호는 고구려, 한강 유역은 신라, 함흥평야는 신라 진흥왕이다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"진흥왕 15년(554) 백제 성왕이 가야와 함께 (가)을/를 공격했다. … (가) 지역의 명칭을 쓰시오.",
+    sub:"이후 김무력이 군사를 이끌고 나아가 서로 맞붙어 싸웠고 백제 성왕을 죽였다.",
+    choices:["한강 유역","낙동강 유역","대동강 유역","금강 유역","임진강 유역"],
+    answer:0,
+    explain:"관산성 전투(554)는 한강 유역을 두고 벌어진 싸움이다. 신라가 백제와의 동맹을 깨고 한강 유역을 차지한 뒤, 백제 성왕이 이를 되찾으려다 관산성에서 전사했다."
+  },
+  {
+    section:"주제4 삼국·가야 경쟁",
+    q:"(가), (나) 가야 국가의 명칭을 각각 쓰시오. (가=고령 중심 후기 연맹, 나=김해 중심 전기 연맹)",
+    sub:"가야 연맹의 변화 지도: 전기 연맹(노란색) vs 후기 연맹(초록색), (가)=고령, (나)=김해",
+    choices:["(가)대가야, (나)금관가야","(가)금관가야, (나)대가야","(가)아라가야, (나)금관가야","(가)대가야, (나)아라가야","(가)금관가야, (나)아라가야"],
+    answer:0,
+    explain:"(가)는 고령 중심의 후기 가야 연맹 = 대가야, (나)는 김해 중심의 전기 가야 연맹 = 금관가야다."
+  },
+
+  // 주제 5 — 삼국 생활
+  {
+    section:"주제5 삼국 생활",
+    q:"뇌 구조 안에 들어갈 내용으로 옳은 것을 보기에서 골라 쓰시오. (일본과의 문화 교류 관련)",
+    sub:"뇌 구조: 일본과의 문화 교류 / 다카마쓰 고분 벽화 / 난고우 유적 / 보기: ㄱ.토우 / ㄴ.첨성대 / ㄷ.반가 사유상 / ㄹ.아스카 문화",
+    choices:["ㄱ, ㄴ","ㄱ, ㄷ","ㄴ, ㄷ","ㄷ, ㄹ","ㄴ, ㄹ"],
+    answer:3,
+    explain:"일본과의 문화 교류와 관련된 것은 반가 사유상(일본 목조 미륵보살 반가사유상과 유사)과 아스카 문화(한반도 영향으로 형성)다."
+  },
+
+  // 주제 6 — 대외 교류
+  {
+    section:"주제6 대외 교류",
+    q:"백제의 불교문화를 보여 주는 문화유산으로 옳은 것만을 보기에서 고른 것은?",
+    sub:"보기: ㄱ.황룡사 / ㄴ.첨성대 / ㄷ.익산 미륵사지 / ㄹ.서산 마애여래삼존상",
+    choices:["ㄱ, ㄴ","ㄱ, ㄷ","ㄴ, ㄷ","ㄴ, ㄹ","ㄷ, ㄹ"],
+    answer:4,
+    explain:"백제의 불교 문화유산은 익산 미륵사지와 서산 마애여래삼존상이다. 황룡사와 첨성대는 신라의 문화유산이다."
+  },
+
+  // 주제 7 — 종교·학문
+  {
+    section:"주제7 종교·학문",
+    q:"(가) 왕에 대한 탐구 활동으로 가장 적절한 것은? (광개토왕의 업적을 기리기 위해 비석을 세웠으며, 고구려왕이 하늘의 자손이라는 생각이 담겨 있다.)",
+    sub:"(가) 은/는 광개토왕의 업적을 기리기 위해 비석을 세웠다. 이 비석에는 고구려왕이 하늘의 자손이며, 고구려가 주변 국가를 이끌어야 한다는 생각이 담겨 있다.",
+    choices:["신라가 대가야를 정복한 이유를 분석한다.","가야의 해상 교역이 위축된 배경을 조사한다.","고구려가 남진 정책을 추진한 과정을 정리한다.","고구려가 대동강 유역을 차지한 과정을 확인한다.","백제가 평양으로 진격해 고구려를 공격한 배경을 파악한다."],
+    answer:2,
+    explain:"광개토왕릉비를 세운 것은 장수왕이다. 장수왕은 평양 천도 후 남진 정책을 추진해 한강 이남까지 영토를 확장했다."
+  },
+  {
+    section:"주제7 종교·학문",
+    q:"경주에는 7곳의 절터가 있는데, (가) 사찰의 명칭을 쓰시오. (진흥왕 14년 553년에 처음 개창됨)",
+    sub:"경주에는 7곳의 절터가 있는데, 첫 번째는 금교 동쪽의 천경림(지금의 흥륜사). …세 번째는 용궁 남쪽(지금의 (가))으로 진흥왕 14년(553)에 처음 개창됐다.",
+    choices:["황룡사","미륵사","분황사","익산 미륵사","감은사"],
+    answer:0,
+    explain:"진흥왕 때 건축한 신라 최대 사찰은 황룡사다. 황룡사 구층 목탑은 선덕 여왕이 건립했다."
+  },
+
+  // 주제 2 — 철기문화 (추가)
+  {
+    section:"주제2 철기문화",
+    q:"(가), (나)에 대한 설명으로 옳은 것은?",
+    sub:"(가) 단궁, 반어피, 과하마가 생산된다. 땅은 기름지고 무늬 있는 표범이 많다. / (나) 동쪽과 서쪽은 바다로 경계 삼고 남쪽은 왜와 접경하니, 면적이 사방 4,000리쯤 된다. 한(韓)에는 마한, 진한, 변한이라는 세 종족이 있다.",
+    choices:["(가)-혼인 풍습으로 서옥제가 있었다.","(가)-덩이쇠를 일본 등 다른 나라에 수출했다.","(나)-소도가 있었으며, 제정분리 사회였다.","(나)-도둑질하면 훔친 것의 12배를 갚도록 했다.","(가),(나)-가축 이름을 붙인 군장들이 주변 지역을 각자 다스렸다."],
+    answer:2,
+    explain:"(가)는 동예(단궁·반어피·과하마 특산물), (나)는 삼한이다. 소도와 제정분리 사회는 삼한(나)의 특징이다. 12배 배상(1책12법)은 부여, 서옥제는 고구려, 사출도(가축이름 군장)는 부여다."
+  },
+  {
+    section:"주제2 철기문화",
+    q:"고구려가 남한강 유역까지 영토를 확장했음을 보여 주는 비석은?",
+    sub:"",
+    choices:["광개토 대왕릉비","단양 신라 적성비","충주 고구려비","북한산 순수비","황초령 순수비"],
+    answer:2,
+    explain:"충주 고구려비(중원 고구려비)는 고구려가 남한강 유역(충주)까지 영토를 확장했음을 보여주는 비석이다."
+  },
+  {
+    section:"주제2 철기문화",
+    q:"(가), (나)에 대한 설명으로 옳은 것은? (가=가야 연맹, 나=백제)",
+    sub:"가야-(가) 지산동 고분군 연결 / 백제-(나) 무령왕릉 연결 / 신라-화랑도 / 고구려-영락",
+    choices:["가야-영락","백제-화랑도","신라-무령왕릉","고구려-지산동 고분군","가야-지산동 고분군"],
+    answer:4,
+    explain:"지산동 고분군은 고령 대가야의 고분군이다. 무령왕릉은 백제, 화랑도는 신라, 영락은 고구려 광개토왕의 연호다."
+  }
+];
+
+const STORAGE_KEY = 'wrong_quiz_v1';
+let round = 1;
+let currentIdx = 0;
+let activeQueue = [];
+let roundResults = {};
+let allHistory = [];
+
+function save(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({round,allHistory}))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');if(d.round)round=d.round;if(d.allHistory)allHistory=d.allHistory}catch(e){}}
+
+function init() {
+  load();
+  activeQueue = QUESTIONS.map((_,i) => i);
+  roundResults = {};
+  currentIdx = 0;
+  showQuestion();
+}
+
+function showQuestion() {
+  const idx = activeQueue[currentIdx];
+  const q = QUESTIONS[idx];
+
+  document.getElementById('qNum').textContent = `Q${currentIdx+1} / ${activeQueue.length}`;
+  document.getElementById('qSection').textContent = q.section;
+  document.getElementById('qText').textContent = q.q;
+  document.getElementById('roundBadge').textContent = `${round}라운드`;
+  document.getElementById('progressFill').style.width = Math.round((currentIdx/activeQueue.length)*100)+'%';
+
+  const subEl = document.getElementById('qSub');
+  if (q.sub) { subEl.textContent = q.sub; subEl.style.display = 'block'; }
+  else { subEl.style.display = 'none'; }
+
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  q.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = `${['①','②','③','④','⑤'][i]} ${c}`;
+    btn.onclick = () => selectAnswer(i, btn);
+    choicesEl.appendChild(btn);
+  });
+
+  const already = roundResults[idx];
+  if (already !== undefined) {
+    applyResult(idx, already);
+    document.getElementById('navArea').style.display = 'flex';
+  } else {
+    document.getElementById('resultBox').style.display = 'none';
+    document.getElementById('navArea').style.display = 'none';
+  }
+
+  updateStats();
+  document.getElementById('nextBtn').textContent = currentIdx === activeQueue.length-1 ? '결과 보기 ▶' : '다음 ▶';
+}
+
+function selectAnswer(picked, btn) {
+  const idx = activeQueue[currentIdx];
+  if (roundResults[idx] !== undefined) return;
+
+  const q = QUESTIONS[idx];
+  const isCorrect = picked === q.answer;
+  roundResults[idx] = isCorrect;
+
+  applyResult(idx, isCorrect, picked);
+  document.getElementById('navArea').style.display = 'flex';
+  updateStats();
+}
+
+function applyResult(idx, isCorrect, picked) {
+  const q = QUESTIONS[idx];
+  const choiceBtns = document.querySelectorAll('.choice');
+
+  choiceBtns.forEach((btn, i) => {
+    btn.onclick = null;
+    if (i === q.answer) btn.classList.add('correct');
+    else if (picked !== undefined && i === picked && !isCorrect) btn.classList.add('wrong-pick');
+  });
+
+  const box = document.getElementById('resultBox');
+  box.className = 'result-box ' + (isCorrect ? 'correct' : 'wrong');
+  box.style.display = 'block';
+  document.getElementById('resultIcon').textContent = isCorrect ? '✅' : '❌';
+  document.getElementById('resultLabel').textContent = isCorrect ? '정답이에요!' : '틀렸어요';
+  document.getElementById('resultExplain').textContent = q.explain;
+}
+
+function updateStats() {
+  let o = 0, x = 0;
+  Object.values(roundResults).forEach(r => { if(r) o++; else x++; });
+  document.getElementById('cntO').textContent = o;
+  document.getElementById('cntX').textContent = x;
+}
+
+function nextQ() {
+  if (currentIdx < activeQueue.length-1) { currentIdx++; showQuestion(); }
+  else showDone();
+}
+function prevQ() { if(currentIdx > 0) { currentIdx--; showQuestion(); } }
+
+function showDone() {
+  document.getElementById('quizScreen').style.display = 'none';
+  document.getElementById('doneScreen').style.display = 'block';
+
+  let o = 0, x = 0;
+  const wrongIdxs = [];
+  activeQueue.forEach(idx => {
+    if (roundResults[idx]) o++;
+    else { x++; wrongIdxs.push(idx); }
+  });
+
+  allHistory.push({round, total:activeQueue.length, o, x});
+  save();
+
+  document.getElementById('doneO').textContent = o;
+  document.getElementById('doneX').textContent = x;
+  document.getElementById('doneEmoji').textContent = x===0 ? '🏆' : x < 5 ? '💪' : '📝';
+  document.getElementById('doneTitle').textContent = x===0 ? '완벽해요!' : `${round}라운드 완료!`;
+  document.getElementById('doneSub').textContent = x===0
+    ? `${activeQueue.length}문제 모두 맞혔어요!`
+    : `${activeQueue.length}문제 중 ${o}개 정답, ${x}개 오답\n${x}개를 다음 라운드에서 다시 풀어봐요!`;
+
+  const retryBtn = document.getElementById('retryBtn');
+  if (x > 0) {
+    retryBtn.textContent = `${round+1}라운드 — 오답 ${x}개 다시 풀기`;
+    retryBtn.style.display = 'block';
+  } else {
+    retryBtn.style.display = 'none';
+  }
+
+  // 오답 목록 표시
+  if (wrongIdxs.length > 0) {
+    const html = `<h3>틀린 문제 정리</h3>` + wrongIdxs.map(idx => {
+      const q = QUESTIONS[idx];
+      return `<div class="wrong-item">
+        <div class="wrong-item-q">${q.section} — ${q.q.substring(0,40)}...</div>
+        <div class="wrong-item-a">✅ 정답: ${['①','②','③','④','⑤'][q.answer]} ${q.choices[q.answer]}</div>
+        <div class="wrong-item-exp">${q.explain}</div>
+      </div>`;
+    }).join('');
+    document.getElementById('wrongReview').innerHTML = html;
+  }
+}
+
+function retryWrong() {
+  const wrongIdxs = activeQueue.filter(idx => roundResults[idx] === false);
+  if (wrongIdxs.length === 0) return;
+  round++;
+  activeQueue = wrongIdxs;
+  roundResults = {};
+  currentIdx = 0;
+  document.getElementById('doneScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  document.getElementById('wrongReview').innerHTML = '';
+  showQuestion();
+}
+
+function retryAll() {
+  round = 1; allHistory = [];
+  activeQueue = QUESTIONS.map((_,i)=>i);
+  roundResults = {}; currentIdx = 0;
+  save();
+  document.getElementById('doneScreen').style.display = 'none';
+  document.getElementById('quizScreen').style.display = 'block';
+  document.getElementById('wrongReview').innerHTML = '';
+  showQuestion();
+}
+
+init();
+</script>
+</body>
+</html>
