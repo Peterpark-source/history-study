@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>철기 문화 암기노트</title>
+<style>
+  :root {
+    --red: #BD0C0F;
+    --red-dark: #791F1F;
+    --red-light: #FCEBEB;
+    --red-mid: #F7C1C1;
+    --green: #2a7a3b;
+    --green-light: #eaf5ec;
+    --border: #e2e2e0;
+    --bg: #f5f5f3;
+    --surface: #ffffff;
+    --text: #1a1a1a;
+    --muted: #555;
+    --hint: #aaa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); font-size: 15px; padding-bottom: 80px; }
+
+  /* ── 헤더 ── */
+  header {
+    background: var(--red);
+    color: #fff;
+    padding: 14px 16px 12px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+  header h1 { font-size: 15px; font-weight: 600; }
+  .mode-tabs { display: flex; gap: 6px; }
+  .mode-tab {
+    padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: 1.5px solid rgba(255,255,255,0.5); color: rgba(255,255,255,0.8); background: transparent;
+  }
+  .mode-tab.active { background: #fff; color: var(--red); border-color: #fff; }
+
+  /* 진행률 바 */
+  .progress-bar-wrap { background: rgba(255,255,255,0.25); border-radius: 10px; height: 6px; margin-bottom: 6px; }
+  .progress-bar-fill { height: 6px; border-radius: 10px; background: #fff; transition: width 0.3s; }
+  .progress-stats { display: flex; gap: 14px; font-size: 12px; }
+  .stat { display: flex; align-items: center; gap: 4px; }
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-o { background: #6ee48a; }
+  .dot-x { background: #f7a0a0; }
+  .dot-skip { background: rgba(255,255,255,0.4); }
+
+  /* ── 토글 버튼 ── */
+  .float-toggle {
+    position: fixed; bottom: 24px; right: 20px; z-index: 200;
+    background: var(--red); color: #fff; border: none;
+    border-radius: 24px; padding: 12px 20px; font-size: 14px; font-weight: 600;
+    cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  }
+  .float-toggle.off { background: #444; }
+
+  /* ── 섹션 ── */
+  .content { padding: 14px 14px 0; max-width: 860px; margin: 0 auto; }
+  .section { margin-bottom: 16px; background: var(--surface); border-radius: 12px; overflow: hidden; border: 0.5px solid var(--border); }
+  .section-title { font-size: 13px; font-weight: 600; color: #fff; background: var(--red); padding: 7px 14px; }
+  .section.trap .section-title { background: var(--red-dark); }
+  .section-count { font-size: 11px; font-weight: 400; opacity: 0.85; margin-left: 6px; }
+
+  /* ── 행 ── */
+  .row {
+    display: flex; border-bottom: 0.5px solid var(--border);
+    transition: background 0.15s;
+  }
+  .row:last-child { border-bottom: none; }
+  .row.correct { background: var(--green-light); }
+  .row.wrong { background: var(--red-light); }
+  .row.hidden-row { display: none; }
+
+  .q-cell, .a-cell { padding: 11px 13px; font-size: 14px; line-height: 1.55; vertical-align: top; }
+  .q-cell { width: 46%; border-right: 0.5px solid var(--border); color: var(--text); }
+  .a-cell { width: 33%; color: var(--muted); cursor: pointer; position: relative; }
+  .ox-cell { width: 21%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 8px; border-left: 0.5px solid var(--border); }
+
+  .row.correct .q-cell { color: var(--green); }
+  .row.wrong .q-cell { color: var(--red-dark); }
+  .trap .q-cell { color: var(--red-dark); }
+  .trap .a-cell { color: #A32D2D; }
+  .trap.correct .q-cell { color: var(--green); }
+  .trap.wrong .q-cell { color: var(--red-dark); }
+
+  /* 정답 가리기 */
+  .a-cell.hide { color: transparent; user-select: none; }
+  .a-cell.hide::after { content: "탭해서 확인"; color: var(--hint); font-size: 11px; display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); white-space: nowrap; }
+
+  /* O/X 버튼 */
+  .ox-btn {
+    width: 38px; height: 34px; border-radius: 8px; border: 1.5px solid var(--border);
+    font-size: 16px; font-weight: 700; cursor: pointer; background: var(--surface);
+    display: flex; align-items: center; justify-content: center; transition: all 0.12s;
+  }
+  .ox-btn.o-btn { color: var(--green); }
+  .ox-btn.x-btn { color: var(--red); }
+  .ox-btn.o-btn.selected { background: var(--green); color: #fff; border-color: var(--green); }
+  .ox-btn.x-btn.selected { background: var(--red); color: #fff; border-color: var(--red); }
+  .ox-btn:active { transform: scale(0.93); }
+
+  .star { color: var(--red); font-size: 11px; }
+  .mem { font-size: 11px; color: var(--red); margin-top: 3px; }
+
+  /* 오답 없을 때 */
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--hint); font-size: 14px; display: none; }
+  .empty-state .emoji { font-size: 40px; display: block; margin-bottom: 10px; }
+
+  /* 헤더 컬럼 */
+  .col-header { display: flex; border-bottom: 1.5px solid var(--border); }
+  .col-header span { font-size: 11px; font-weight: 600; color: var(--hint); text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 13px; }
+  .col-header .ch-q { width: 46%; border-right: 0.5px solid var(--border); }
+  .col-header .ch-a { width: 33%; }
+  .col-header .ch-ox { width: 21%; border-left: 0.5px solid var(--border); text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>철기 문화와 여러 나라의 성장</h1>
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-all" onclick="setMode('all')">전체</button>
+      <button class="mode-tab" id="tab-wrong" onclick="setMode('wrong')">오답만</button>
+      <button class="mode-tab" onclick="resetAll()" style="opacity:0.7">초기화</button>
+    </div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="progress-stats">
+    <span class="stat"><span class="stat-dot dot-o"></span><span id="cnt-o">0</span>개 맞음</span>
+    <span class="stat"><span class="stat-dot dot-x"></span><span id="cnt-x">0</span>개 틀림</span>
+    <span class="stat"><span class="stat-dot dot-skip"></span><span id="cnt-skip">0</span>개 미채점</span>
+  </div>
+</header>
+
+<button class="float-toggle" id="floatToggle" onclick="toggleAll()">정답 가리기 ON</button>
+
+<div class="content" id="mainContent">
+
+  <!-- ① 철기 문화 -->
+  <div class="section" data-section="s1">
+    <div class="section-title">① 철기 문화 <span class="section-count" id="sc-s1"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="1">
+      <div class="q-cell">철의 특징 2가지는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">① 매장량 많아 구하기 쉬움<br>② 청동보다 단단 → 무기·농기구</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(1,'o')">O</button><button class="ox-btn x-btn" onclick="mark(1,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="2">
+      <div class="q-cell">철기 문화가 퍼진 지역은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">만주 + 한반도 전역</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(2,'o')">O</button><button class="ox-btn x-btn" onclick="mark(2,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="3">
+      <div class="q-cell">철기로 성장한 나라 5개</div>
+      <div class="a-cell" onclick="revealAnswer(this)">부여·고구려·옥저·동예·삼한</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(3,'o')">O</button><button class="ox-btn x-btn" onclick="mark(3,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="4">
+      <div class="q-cell">철기 보급의 사회적 영향 흐름은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">농업 생산력↑ → 인구↑ → 정치 세력 형성 → 철제 무기로 영토 정복</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(4,'o')">O</button><button class="ox-btn x-btn" onclick="mark(4,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- ② 나라별 핵심 -->
+  <div class="section" data-section="s2">
+    <div class="section-title">② 나라별 핵심 <span class="section-count" id="sc-s2"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="5">
+      <div class="q-cell">부여의 위치와 정치 형태는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">만주 평야 / 연맹, 왕권 약함</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(5,'o')">O</button><button class="ox-btn x-btn" onclick="mark(5,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="6">
+      <div class="q-cell">고구려를 세운 두 세력은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">부여 세력 + 압록강 유역 토착 세력</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(6,'o')">O</button><button class="ox-btn x-btn" onclick="mark(6,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="7">
+      <div class="q-cell">고구려가 정복 국가가 된 이유는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">산간 지역 → 농경 불리 → 주변 소국 정복으로 영토 확장</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(7,'o')">O</button><button class="ox-btn x-btn" onclick="mark(7,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="8">
+      <div class="q-cell">옥저·동예의 위치와 정치 특징은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">동해안·비옥 / 왕 없음, 군장이 다스림</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(8,'o')">O</button><button class="ox-btn x-btn" onclick="mark(8,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="9">
+      <div class="q-cell">동예의 특산물 3가지 <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">단궁·반어피·과하마</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(9,'o')">O</button><button class="ox-btn x-btn" onclick="mark(9,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="10">
+      <div class="q-cell">삼한의 경제 특징은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">벼농사 발달 / 진한·변한 = 철 多 → 덩이쇠 수출</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(10,'o')">O</button><button class="ox-btn x-btn" onclick="mark(10,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- ③ 사회 모습 -->
+  <div class="section" data-section="s3">
+    <div class="section-title">③ 사회 모습 <span class="section-count" id="sc-s3"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="11">
+      <div class="q-cell">부여 사출도의 4가(군장)는? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">마가·우가·저가·구가</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(11,'o')">O</button><button class="ox-btn x-btn" onclick="mark(11,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="12">
+      <div class="q-cell">고구려에서 나라 중요한 일을 결정한 회의는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">제가 회의 (5부 지배자)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(12,'o')">O</button><button class="ox-btn x-btn" onclick="mark(12,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="13">
+      <div class="q-cell">부여 1책 12법 내용은? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">도둑질 → 훔친 것의 12배로 갚음</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(13,'o')">O</button><button class="ox-btn x-btn" onclick="mark(13,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="14">
+      <div class="q-cell">동예 책화 내용은? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">타 집단 영역 침범 → 노비·소·말로 갚음</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(14,'o')">O</button><button class="ox-btn x-btn" onclick="mark(14,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="15">
+      <div class="q-cell">부여 제천 행사 때만 있는 특징은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">죄수를 풀어줌</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(15,'o')">O</button><button class="ox-btn x-btn" onclick="mark(15,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- ④ 결혼·순장 풍습 -->
+  <div class="section" data-section="s4">
+    <div class="section-title">④ 결혼·순장 풍습 (최빈출) <span class="section-count" id="sc-s4"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="16">
+      <div class="q-cell">고구려 서옥제란? <span class="star">★★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">혼인 후 남자가 신붓집 안 서옥에서 생활 → 자식 다 자라면 신랑 집으로 돌아감 (처가살이)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(16,'o')">O</button><button class="ox-btn x-btn" onclick="mark(16,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="17">
+      <div class="q-cell">옥저 민며느리제란? <span class="star">★★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">신랑집이 어린 신부 데려와 키움 → 성인 되면 신랑집이 신부집에 재물 냄</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(17,'o')">O</button><button class="ox-btn x-btn" onclick="mark(17,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="18">
+      <div class="q-cell">순장 풍습이 있었던 나라는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">부여 (+ 고구려·신라·가야)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(18,'o')">O</button><button class="ox-btn x-btn" onclick="mark(18,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- ⑤ 제천 행사 & 소도 -->
+  <div class="section" data-section="s5">
+    <div class="section-title">⑤ 제천 행사 &amp; 삼한 소도 <span class="section-count" id="sc-s5"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="19">
+      <div class="q-cell">제천 행사의 의미와 시기는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">풍요 기원 하늘 제사 / 농사 시작 또는 끝날 때</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(19,'o')">O</button><button class="ox-btn x-btn" onclick="mark(19,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="20">
+      <div class="q-cell">삼한 소도의 특징은? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">천군(제사장) 지배 신성 구역 / 왕·군장 침범 불가 / 죄인 숨어도 못 잡음 → 제정분리 사회</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(20,'o')">O</button><button class="ox-btn x-btn" onclick="mark(20,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="21">
+      <div class="q-cell">솟대의 유래는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">소도에서 세우던 것</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(21,'o')">O</button><button class="ox-btn x-btn" onclick="mark(21,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- 시험 함정 -->
+  <div class="section trap" data-section="s6">
+    <div class="section-title">시험 함정 5개 — 직전 체크 <span class="section-count" id="sc-s6"></span></div>
+    <div class="col-header"><span class="ch-q">함정 포인트</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row trap" data-id="22">
+      <div class="q-cell">서옥제는 어느 나라?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">고구려 (옥저 X)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(22,'o')">O</button><button class="ox-btn x-btn" onclick="mark(22,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="23">
+      <div class="q-cell">민며느리제는 어느 나라?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">옥저 (고구려 X)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(23,'o')">O</button><button class="ox-btn x-btn" onclick="mark(23,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="24">
+      <div class="q-cell">옥저·동예에 왕이 있었나?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">없었다 — 군장이 다스림</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(24,'o')">O</button><button class="ox-btn x-btn" onclick="mark(24,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="25">
+      <div class="q-cell">1책 12법은 어떤 죄?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">도둑질 (살인 X) → 12배 배상</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(25,'o')">O</button><button class="ox-btn x-btn" onclick="mark(25,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="26">
+      <div class="q-cell">소도가 나타내는 사회는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">제정분리 사회 (정치 ≠ 종교)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(26,'o')">O</button><button class="ox-btn x-btn" onclick="mark(26,'x')">X</button></div>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <span class="emoji">🎉</span>
+    틀린 문제가 없어요!<br>전체 탭으로 돌아가서 다시 도전해보세요.
+  </div>
+
+</div><!-- /content -->
+
+<script>
+const TOTAL = 26;
+const STORAGE_KEY = 'ironage_scores';
+const scores = {};
+let hiding = true;
+let mode = 'all';
+
+function saveScores() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(scores)); } catch(e) {}
+}
+
+function loadScores() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) Object.assign(scores, JSON.parse(saved));
+  } catch(e) {}
+}
+
+function applyRowState(id) {
+  const row = document.querySelector(`.row[data-id="${id}"]`);
+  if (!row) return;
+  const result = scores[id] || null;
+  row.classList.toggle('correct', result === 'o');
+  row.classList.toggle('wrong', result === 'x');
+  row.querySelectorAll('.o-btn').forEach(b => b.classList.toggle('selected', result === 'o'));
+  row.querySelectorAll('.x-btn').forEach(b => b.classList.toggle('selected', result === 'x'));
+}
+
+function revealAnswer(el) {
+  el.classList.toggle('hide');
+}
+
+function mark(id, result) {
+  if (scores[id] === result) {
+    scores[id] = null;
+  } else {
+    scores[id] = result;
+  }
+  saveScores();
+  applyRowState(id);
+  updateProgress();
+  if (mode === 'wrong') applyModeFilter();
+}
+
+function updateProgress() {
+  let o = 0, x = 0;
+  Object.values(scores).forEach(v => { if (v === 'o') o++; else if (v === 'x') x++; });
+  const skip = TOTAL - o - x;
+  const pct = Math.round((o + x) / TOTAL * 100);
+
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('cnt-o').textContent = o;
+  document.getElementById('cnt-x').textContent = x;
+  document.getElementById('cnt-skip').textContent = skip;
+
+  document.querySelectorAll('.section').forEach(sec => {
+    const sid = sec.dataset.section;
+    const rows = sec.querySelectorAll('.row');
+    let so = 0, sx = 0;
+    rows.forEach(r => {
+      const rid = parseInt(r.dataset.id);
+      if (scores[rid] === 'o') so++;
+      else if (scores[rid] === 'x') sx++;
+    });
+    const el = document.getElementById('sc-' + sid);
+    if (el) el.textContent = `(O: ${so} / X: ${sx} / 미채점: ${rows.length - so - sx})`;
+  });
+}
+
+function applyModeFilter() {
+  document.querySelectorAll('.row').forEach(row => {
+    const id = parseInt(row.dataset.id);
+    if (mode === 'wrong') {
+      const isWrong = scores[id] === 'x' || scores[id] == null;
+      row.classList.toggle('hidden-row', !isWrong);
+    } else {
+      row.classList.remove('hidden-row');
+    }
+  });
+
+  document.querySelectorAll('.section').forEach(sec => {
+    const visible = sec.querySelectorAll('.row:not(.hidden-row)').length;
+    sec.style.display = (mode === 'wrong' && visible === 0) ? 'none' : '';
+  });
+
+  const emptyState = document.getElementById('emptyState');
+  if (mode === 'wrong') {
+    const xCount = Object.values(scores).filter(v => v === 'x').length;
+    emptyState.style.display = xCount === 0 ? 'block' : 'none';
+  } else {
+    emptyState.style.display = 'none';
+    document.querySelectorAll('.section').forEach(s => s.style.display = '');
+  }
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-all').classList.toggle('active', m === 'all');
+  document.getElementById('tab-wrong').classList.toggle('active', m === 'wrong');
+  applyModeFilter();
+}
+
+function toggleAll() {
+  hiding = !hiding;
+  const btn = document.getElementById('floatToggle');
+  btn.textContent = hiding ? '정답 가리기 ON' : '정답 가리기 OFF';
+  btn.classList.toggle('off', !hiding);
+  document.querySelectorAll('.a-cell').forEach(el => {
+    hiding ? el.classList.add('hide') : el.classList.remove('hide');
+  });
+}
+
+function resetAll() {
+  if (!confirm('모든 O/X 기록을 초기화할까요?')) return;
+  Object.keys(scores).forEach(k => delete scores[k]);
+  saveScores();
+  for (let i = 1; i <= TOTAL; i++) applyRowState(i);
+  updateProgress();
+  applyModeFilter();
+}
+
+// 초기화
+loadScores();
+document.querySelectorAll('.a-cell').forEach(el => el.classList.add('hide'));
+for (let i = 1; i <= TOTAL; i++) applyRowState(i);
+updateProgress();
+</script>
+</body>
+</html>
