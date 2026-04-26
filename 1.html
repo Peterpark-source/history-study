@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>청동기 문화와 고조선의 등장</title>
+<style>
+  :root {
+    --red: #BD0C0F; --red-dark: #791F1F; --red-light: #FCEBEB; --red-mid: #F7C1C1;
+    --green: #2a7a3b; --green-light: #eaf5ec;
+    --border: #e2e2e0; --bg: #f5f5f3; --surface: #ffffff;
+    --text: #1a1a1a; --muted: #555; --hint: #aaa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, "Helvetica Neue", sans-serif; background: var(--bg); color: var(--text); font-size: 15px; padding-bottom: 80px; }
+
+  header { background: var(--red); color: #fff; padding: 14px 16px 12px; position: sticky; top: 0; z-index: 100; }
+  .header-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .back-btn { color: #fff; text-decoration: none; font-size: 20px; line-height: 1; }
+  header h1 { font-size: 14px; font-weight: 600; }
+  .mode-tabs { display: flex; gap: 6px; }
+  .mode-tab { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1.5px solid rgba(255,255,255,0.5); color: rgba(255,255,255,0.8); background: transparent; }
+  .mode-tab.active { background: #fff; color: var(--red); border-color: #fff; }
+
+  .progress-bar-wrap { background: rgba(255,255,255,0.25); border-radius: 10px; height: 6px; margin-bottom: 6px; }
+  .progress-bar-fill { height: 6px; border-radius: 10px; background: #fff; transition: width 0.3s; }
+  .progress-stats { display: flex; gap: 14px; font-size: 12px; }
+  .stat { display: flex; align-items: center; gap: 4px; }
+  .stat-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-o { background: #6ee48a; } .dot-x { background: #f7a0a0; } .dot-skip { background: rgba(255,255,255,0.4); }
+
+  .float-toggle { position: fixed; bottom: 24px; right: 20px; z-index: 200; background: var(--red); color: #fff; border: none; border-radius: 24px; padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.18); }
+  .float-toggle.off { background: #444; }
+
+  .content { padding: 14px 14px 0; max-width: 860px; margin: 0 auto; }
+  .section { margin-bottom: 16px; background: var(--surface); border-radius: 12px; overflow: hidden; border: 0.5px solid var(--border); }
+  .section-title { font-size: 13px; font-weight: 600; color: #fff; background: var(--red); padding: 7px 14px; }
+  .section.trap .section-title { background: var(--red-dark); }
+  .section-count { font-size: 11px; font-weight: 400; opacity: 0.85; margin-left: 6px; }
+
+  .row { display: flex; border-bottom: 0.5px solid var(--border); transition: background 0.15s; }
+  .row:last-child { border-bottom: none; }
+  .row.correct { background: var(--green-light); }
+  .row.wrong { background: var(--red-light); }
+  .row.hidden-row { display: none; }
+
+  .q-cell, .a-cell { padding: 11px 13px; font-size: 14px; line-height: 1.55; vertical-align: top; }
+  .q-cell { width: 46%; border-right: 0.5px solid var(--border); color: var(--text); }
+  .a-cell { width: 33%; color: var(--muted); cursor: pointer; position: relative; }
+  .ox-cell { width: 21%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 8px; border-left: 0.5px solid var(--border); }
+
+  .row.correct .q-cell { color: var(--green); }
+  .row.wrong .q-cell { color: var(--red-dark); }
+  .trap .q-cell { color: var(--red-dark); }
+  .trap .a-cell { color: #A32D2D; }
+  .trap.correct .q-cell { color: var(--green); }
+
+  .a-cell.hide { color: transparent; user-select: none; }
+  .a-cell.hide::after { content: "탭해서 확인"; color: var(--hint); font-size: 11px; display: block; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); white-space: nowrap; }
+
+  .ox-btn { width: 38px; height: 34px; border-radius: 8px; border: 1.5px solid var(--border); font-size: 16px; font-weight: 700; cursor: pointer; background: var(--surface); display: flex; align-items: center; justify-content: center; transition: all 0.12s; }
+  .ox-btn.o-btn { color: var(--green); }
+  .ox-btn.x-btn { color: var(--red); }
+  .ox-btn.o-btn.selected { background: var(--green); color: #fff; border-color: var(--green); }
+  .ox-btn.x-btn.selected { background: var(--red); color: #fff; border-color: var(--red); }
+  .ox-btn:active { transform: scale(0.93); }
+
+  .star { color: var(--red); font-size: 11px; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--hint); font-size: 14px; display: none; }
+
+  .col-header { display: flex; border-bottom: 1.5px solid var(--border); }
+  .col-header span { font-size: 11px; font-weight: 600; color: var(--hint); text-transform: uppercase; letter-spacing: 0.5px; padding: 7px 13px; }
+  .col-header .ch-q { width: 46%; border-right: 0.5px solid var(--border); }
+  .col-header .ch-a { width: 33%; }
+  .col-header .ch-ox { width: 21%; border-left: 0.5px solid var(--border); text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div class="header-left">
+      <a class="back-btn" href="index.html">‹</a>
+      <h1>주제 1 — 청동기 문화와 고조선의 등장</h1>
+    </div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-all" onclick="setMode('all')">전체</button>
+      <button class="mode-tab" id="tab-wrong" onclick="setMode('wrong')">오답만</button>
+      <button class="mode-tab" onclick="resetAll()" style="opacity:0.7">초기화</button>
+    </div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="progress-stats">
+    <span class="stat"><span class="stat-dot dot-o"></span><span id="cnt-o">0</span>개 맞음</span>
+    <span class="stat"><span class="stat-dot dot-x"></span><span id="cnt-x">0</span>개 틀림</span>
+    <span class="stat"><span class="stat-dot dot-skip"></span><span id="cnt-skip">0</span>개 미채점</span>
+  </div>
+</header>
+
+<button class="float-toggle" id="floatToggle" onclick="toggleAll()">정답 가리기 ON</button>
+
+<div class="content">
+
+  <!-- ① 청동기의 보급 -->
+  <div class="section" data-section="s1">
+    <div class="section-title">① 청동기의 보급과 농사의 확대 <span class="section-count" id="sc-s1"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="1">
+      <div class="q-cell">청동기 문화가 보급된 시기는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">기원전 15세기경, 만주와 한반도</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(1,'o')">O</button><button class="ox-btn x-btn" onclick="mark(1,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="2">
+      <div class="q-cell">청동은 누가 주로 사용했나?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">지배 계급 — 무기·장신구·제사용으로 사용 (농기구·생활도구는 돌·나무)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(2,'o')">O</button><button class="ox-btn x-btn" onclick="mark(2,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="3">
+      <div class="q-cell">청동기 시대 농사 관련 유물 2가지는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">반달 돌칼(곡식 수확) · 토기(곡식 저장·조리)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(3,'o')">O</button><button class="ox-btn x-btn" onclick="mark(3,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="4">
+      <div class="q-cell">청동기 시대 마을의 특징은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">강가·구릉에 위치 / 울타리·도랑으로 방어 / 제단 설치</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(4,'o')">O</button><button class="ox-btn x-btn" onclick="mark(4,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- ② 사회 변화 -->
+  <div class="section" data-section="s2">
+    <div class="section-title">② 청동기 시대 사회 변화 <span class="section-count" id="sc-s2"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="5">
+      <div class="q-cell">생산력 증가가 가져온 변화는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">인구 증가 → 마을 규모 확대 → 사유 재산 발생 → 다툼 증가</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(5,'o')">O</button><button class="ox-btn x-btn" onclick="mark(5,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="6">
+      <div class="q-cell">군장이란?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">여러 집단을 통합한 정치 세력 → 정치·경제 권력 + 하늘 제사 종교 의식 담당</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(6,'o')">O</button><button class="ox-btn x-btn" onclick="mark(6,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="7">
+      <div class="q-cell">고인돌이란?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">군장이 죽으면 많은 사람이 동원되어 만든 거대한 무덤</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(7,'o')">O</button><button class="ox-btn x-btn" onclick="mark(7,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="8">
+      <div class="q-cell">청동검·청동 장신구의 역할은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">자신의 권위를 드러내기 위해 착용</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(8,'o')">O</button><button class="ox-btn x-btn" onclick="mark(8,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- ③ 고조선 건국 -->
+  <div class="section" data-section="s3">
+    <div class="section-title">③ 고조선의 건국 <span class="section-count" id="sc-s3"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="9">
+      <div class="q-cell">고조선 건국에 유리한 지리적 조건 2가지는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">남만주·한반도 서북부 = 넓은 들판(농사 유리) / 중국·몽골 초원 인접(문물 수용)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(9,'o')">O</button><button class="ox-btn x-btn" onclick="mark(9,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="10">
+      <div class="q-cell">고조선이 우리 역사상 최초의 국가인 이유는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">청동기 문화 바탕 → 더 큰 세력이 주변 정복·통합 → 국가 형태 갖춤</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(10,'o')">O</button><button class="ox-btn x-btn" onclick="mark(10,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="11">
+      <div class="q-cell">고조선의 성장 중심지는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">요동 지역과 대동강 유역 (비파형 동검·탁자식 고인돌 분포로 추측)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(11,'o')">O</button><button class="ox-btn x-btn" onclick="mark(11,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="12">
+      <div class="q-cell">단군왕검의 의미는? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">단군 = 제사장 / 왕검 = 정치 지배자 → 한 사람이 종교·정치 주관 = 제정일치 사회</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(12,'o')">O</button><button class="ox-btn x-btn" onclick="mark(12,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="13">
+      <div class="q-cell">기원전 5~4세기 고조선에 철기 문화가 더 발달한 이유는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">중국이 분열한 시기에 많은 사람이 이주해 옴</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(13,'o')">O</button><button class="ox-btn x-btn" onclick="mark(13,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- ④ 고조선 발전과 멸망 -->
+  <div class="section" data-section="s4">
+    <div class="section-title">④ 고조선의 발전과 멸망 <span class="section-count" id="sc-s4"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="14">
+      <div class="q-cell">위만이 고조선 왕이 된 해는? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">기원전 194년 (중국 한에서 망명 → 세력 키워 왕위 차지)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(14,'o')">O</button><button class="ox-btn x-btn" onclick="mark(14,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="15">
+      <div class="q-cell">고조선이 한과 분쟁이 일어난 이유는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">한과 한반도 중남부 사이에서 중계 무역 → 한이 견제</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(15,'o')">O</button><button class="ox-btn x-btn" onclick="mark(15,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="16">
+      <div class="q-cell">고조선 멸망 배경은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">흉노와 갈등을 겪던 한이 고조선을 견제 → 전쟁</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(16,'o')">O</button><button class="ox-btn x-btn" onclick="mark(16,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="17">
+      <div class="q-cell">고조선 멸망 과정은? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">한의 공격 → 1년 넘게 맞서 싸움 → 지배층 분열 → 왕검성 함락 → 멸망(기원전 108년)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(17,'o')">O</button><button class="ox-btn x-btn" onclick="mark(17,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="18">
+      <div class="q-cell">고조선 멸망 이후 한이 설치한 것은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">고조선 옛 땅에 4개의 군 설치 (낙랑군 등) → 직접 지배</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(18,'o')">O</button><button class="ox-btn x-btn" onclick="mark(18,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="19">
+      <div class="q-cell">고조선 멸망이 주변 지역에 미친 영향은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">유민이 한반도 남부로 이동 → 그 지역 정치 집단 성장에 영향</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(19,'o')">O</button><button class="ox-btn x-btn" onclick="mark(19,'x')">X</button></div>
+    </div>
+  </div>
+
+  <!-- 시험 함정 -->
+  <div class="section trap" data-section="s5">
+    <div class="section-title">시험 함정 — 직전 체크 <span class="section-count" id="sc-s5"></span></div>
+    <div class="col-header"><span class="ch-q">함정 포인트</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row trap" data-id="20">
+      <div class="q-cell">청동기는 농민도 농기구로 사용했다?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">X — 지배 계급만 사용. 농기구는 돌·나무</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(20,'o')">O</button><button class="ox-btn x-btn" onclick="mark(20,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="21">
+      <div class="q-cell">단군왕검에서 단군은 정치 지배자를 의미한다?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">X — 단군 = 제사장 / 왕검 = 정치 지배자</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(21,'o')">O</button><button class="ox-btn x-btn" onclick="mark(21,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="22">
+      <div class="q-cell">고조선은 흉노와 관계를 맺어 한을 견제했다?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">X — 흉노와 관계를 맺은 건 한. 고조선은 중계 무역으로 성장하다 한에 견제당함</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(22,'o')">O</button><button class="ox-btn x-btn" onclick="mark(22,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="23">
+      <div class="q-cell">고조선은 한의 공격에 바로 무너졌다?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">X — 1년 넘게 맞서 싸웠고, 지배층 분열로 결국 멸망</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(23,'o')">O</button><button class="ox-btn x-btn" onclick="mark(23,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="24">
+      <div class="q-cell">고조선 멸망 후 한이 설치한 군은 몇 개?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">4개 (낙랑군 포함) — 나머지 3개는 고조선 유민의 저항으로 일찍 없어짐</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(24,'o')">O</button><button class="ox-btn x-btn" onclick="mark(24,'x')">X</button></div>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <span style="font-size:40px;display:block;margin-bottom:10px">🎉</span>
+    틀린 문제가 없어요!<br>전체 탭으로 돌아가서 다시 도전해보세요.
+  </div>
+
+</div>
+
+<script>
+const TOTAL = 24;
+const STORAGE_KEY = 'bronzeage_scores';
+const scores = {};
+let hiding = true;
+let mode = 'all';
+
+function saveScores() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(scores)); } catch(e) {} }
+function loadScores() { try { const s = localStorage.getItem(STORAGE_KEY); if (s) Object.assign(scores, JSON.parse(s)); } catch(e) {} }
+
+function applyRowState(id) {
+  const row = document.querySelector(`.row[data-id="${id}"]`);
+  if (!row) return;
+  const result = scores[id] || null;
+  row.classList.toggle('correct', result === 'o');
+  row.classList.toggle('wrong', result === 'x');
+  row.querySelectorAll('.o-btn').forEach(b => b.classList.toggle('selected', result === 'o'));
+  row.querySelectorAll('.x-btn').forEach(b => b.classList.toggle('selected', result === 'x'));
+}
+
+function revealAnswer(el) { el.classList.toggle('hide'); }
+
+function mark(id, result) {
+  scores[id] = scores[id] === result ? null : result;
+  saveScores();
+  applyRowState(id);
+  updateProgress();
+  if (mode === 'wrong') applyModeFilter();
+}
+
+function updateProgress() {
+  let o = 0, x = 0;
+  Object.values(scores).forEach(v => { if (v === 'o') o++; else if (v === 'x') x++; });
+  document.getElementById('progressFill').style.width = Math.round((o+x)/TOTAL*100) + '%';
+  document.getElementById('cnt-o').textContent = o;
+  document.getElementById('cnt-x').textContent = x;
+  document.getElementById('cnt-skip').textContent = TOTAL - o - x;
+
+  document.querySelectorAll('.section').forEach(sec => {
+    const sid = sec.dataset.section;
+    const rows = sec.querySelectorAll('.row');
+    let so = 0, sx = 0;
+    rows.forEach(r => { const rid = parseInt(r.dataset.id); if (scores[rid]==='o') so++; else if (scores[rid]==='x') sx++; });
+    const el = document.getElementById('sc-'+sid);
+    if (el) el.textContent = `(O:${so} X:${sx} 미:${rows.length-so-sx})`;
+  });
+}
+
+function applyModeFilter() {
+  document.querySelectorAll('.row').forEach(row => {
+    const id = parseInt(row.dataset.id);
+    row.classList.toggle('hidden-row', mode === 'wrong' && scores[id] !== 'x' && scores[id] != null);
+    if (mode === 'wrong' && scores[id] == null) row.classList.remove('hidden-row');
+    if (mode === 'wrong' && scores[id] === 'x') row.classList.remove('hidden-row');
+    if (mode === 'wrong' && scores[id] === 'o') row.classList.add('hidden-row');
+    if (mode === 'all') row.classList.remove('hidden-row');
+  });
+  document.querySelectorAll('.section').forEach(sec => {
+    const visible = sec.querySelectorAll('.row:not(.hidden-row)').length;
+    sec.style.display = (mode === 'wrong' && visible === 0) ? 'none' : '';
+  });
+  const xCount = Object.values(scores).filter(v => v === 'x').length;
+  document.getElementById('emptyState').style.display = (mode === 'wrong' && xCount === 0) ? 'block' : 'none';
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-all').classList.toggle('active', m === 'all');
+  document.getElementById('tab-wrong').classList.toggle('active', m === 'wrong');
+  applyModeFilter();
+}
+
+function toggleAll() {
+  hiding = !hiding;
+  const btn = document.getElementById('floatToggle');
+  btn.textContent = hiding ? '정답 가리기 ON' : '정답 가리기 OFF';
+  btn.classList.toggle('off', !hiding);
+  document.querySelectorAll('.a-cell').forEach(el => hiding ? el.classList.add('hide') : el.classList.remove('hide'));
+}
+
+function resetAll() {
+  if (!confirm('모든 O/X 기록을 초기화할까요?')) return;
+  Object.keys(scores).forEach(k => delete scores[k]);
+  saveScores();
+  for (let i = 1; i <= TOTAL; i++) applyRowState(i);
+  updateProgress();
+  applyModeFilter();
+}
+
+loadScores();
+document.querySelectorAll('.a-cell').forEach(el => el.classList.add('hide'));
+for (let i = 1; i <= TOTAL; i++) applyRowState(i);
+updateProgress();
+</script>
+</body>
+</html>
