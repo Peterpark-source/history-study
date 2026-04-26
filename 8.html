@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>수와 당의 침략을 물리친 고구려</title>
+<style>
+  :root{--red:#BD0C0F;--red-dark:#791F1F;--red-light:#FCEBEB;--green:#2a7a3b;--green-light:#eaf5ec;--border:#e2e2e0;--bg:#f5f5f3;--surface:#fff;--text:#1a1a1a;--muted:#555;--hint:#aaa}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,"Helvetica Neue",sans-serif;background:var(--bg);color:var(--text);font-size:15px;padding-bottom:80px}
+  header{background:var(--red);color:#fff;padding:14px 16px 12px;position:sticky;top:0;z-index:100}
+  .header-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .header-left{display:flex;align-items:center;gap:10px}
+  .back-btn{color:#fff;text-decoration:none;font-size:20px;line-height:1}
+  header h1{font-size:14px;font-weight:600}
+  .mode-tabs{display:flex;gap:6px}
+  .mode-tab{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid rgba(255,255,255,0.5);color:rgba(255,255,255,0.8);background:transparent}
+  .mode-tab.active{background:#fff;color:var(--red);border-color:#fff}
+  .progress-bar-wrap{background:rgba(255,255,255,0.25);border-radius:10px;height:6px;margin-bottom:6px}
+  .progress-bar-fill{height:6px;border-radius:10px;background:#fff;transition:width 0.3s}
+  .progress-stats{display:flex;gap:14px;font-size:12px}
+  .stat{display:flex;align-items:center;gap:4px}
+  .stat-dot{width:8px;height:8px;border-radius:50%}
+  .dot-o{background:#6ee48a}.dot-x{background:#f7a0a0}.dot-skip{background:rgba(255,255,255,0.4)}
+  .float-toggle{position:fixed;bottom:24px;right:20px;z-index:200;background:var(--red);color:#fff;border:none;border-radius:24px;padding:12px 20px;font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.18)}
+  .float-toggle.off{background:#444}
+  .content{padding:14px 14px 0;max-width:860px;margin:0 auto}
+  .section{margin-bottom:16px;background:var(--surface);border-radius:12px;overflow:hidden;border:0.5px solid var(--border)}
+  .section-title{font-size:13px;font-weight:600;color:#fff;background:var(--red);padding:7px 14px}
+  .section.trap .section-title{background:var(--red-dark)}
+  .section-count{font-size:11px;font-weight:400;opacity:0.85;margin-left:6px}
+  .row{display:flex;border-bottom:0.5px solid var(--border);transition:background 0.15s}
+  .row:last-child{border-bottom:none}
+  .row.correct{background:var(--green-light)}.row.wrong{background:var(--red-light)}.row.hidden-row{display:none}
+  .q-cell,.a-cell{padding:11px 13px;font-size:14px;line-height:1.55;vertical-align:top}
+  .q-cell{width:46%;border-right:0.5px solid var(--border);color:var(--text)}
+  .a-cell{width:33%;color:var(--muted);cursor:pointer;position:relative}
+  .ox-cell{width:21%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:8px;border-left:0.5px solid var(--border)}
+  .row.correct .q-cell{color:var(--green)}.row.wrong .q-cell{color:var(--red-dark)}
+  .trap .q-cell{color:var(--red-dark)}.trap .a-cell{color:#A32D2D}.trap.correct .q-cell{color:var(--green)}
+  .a-cell.hide{color:transparent;user-select:none}
+  .a-cell.hide::after{content:"탭해서 확인";color:var(--hint);font-size:11px;display:block;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);white-space:nowrap}
+  .ox-btn{width:38px;height:34px;border-radius:8px;border:1.5px solid var(--border);font-size:16px;font-weight:700;cursor:pointer;background:var(--surface);display:flex;align-items:center;justify-content:center;transition:all 0.12s}
+  .ox-btn.o-btn{color:var(--green)}.ox-btn.x-btn{color:var(--red)}
+  .ox-btn.o-btn.selected{background:var(--green);color:#fff;border-color:var(--green)}
+  .ox-btn.x-btn.selected{background:var(--red);color:#fff;border-color:var(--red)}
+  .ox-btn:active{transform:scale(0.93)}
+  .star{color:var(--red);font-size:11px}
+  .empty-state{text-align:center;padding:40px 20px;color:var(--hint);font-size:14px;display:none}
+  .col-header{display:flex;border-bottom:1.5px solid var(--border)}
+  .col-header span{font-size:11px;font-weight:600;color:var(--hint);text-transform:uppercase;letter-spacing:0.5px;padding:7px 13px}
+  .col-header .ch-q{width:46%;border-right:0.5px solid var(--border)}
+  .col-header .ch-a{width:33%}
+  .col-header .ch-ox{width:21%;border-left:0.5px solid var(--border);text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-top">
+    <div class="header-left">
+      <a class="back-btn" href="index.html">‹</a>
+      <h1>주제 8 — 수와 당의 침략을 물리친 고구려</h1>
+    </div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" id="tab-all" onclick="setMode('all')">전체</button>
+      <button class="mode-tab" id="tab-wrong" onclick="setMode('wrong')">오답만</button>
+      <button class="mode-tab" onclick="resetAll()" style="opacity:0.7">초기화</button>
+    </div>
+  </div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+  <div class="progress-stats">
+    <span class="stat"><span class="stat-dot dot-o"></span><span id="cnt-o">0</span>개 맞음</span>
+    <span class="stat"><span class="stat-dot dot-x"></span><span id="cnt-x">0</span>개 틀림</span>
+    <span class="stat"><span class="stat-dot dot-skip"></span><span id="cnt-skip">0</span>개 미채점</span>
+  </div>
+</header>
+<button class="float-toggle" id="floatToggle" onclick="toggleAll()">정답 가리기 ON</button>
+<div class="content">
+
+  <div class="section" data-section="s1">
+    <div class="section-title">① 수의 침략을 막아 낸 고구려 <span class="section-count" id="sc-s1"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="1">
+      <div class="q-cell">수가 중국 통일 후 각국의 반응은?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">수: 고구려에 항복 요구·침략 / 고구려: 북쪽 돌궐·남쪽 왜와 손잡으려 함 / 백제: 수와 친선 / 신라: 수와 외교해 고구려 견제</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(1,'o')">O</button><button class="ox-btn x-btn" onclick="mark(1,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="2">
+      <div class="q-cell">고구려의 선제공격이란?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">수의 항복 요구 거부 → 고구려가 요서 지역 등을 먼저 공격</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(2,'o')">O</button><button class="ox-btn x-btn" onclick="mark(2,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="3">
+      <div class="q-cell">살수 대첩(612)이란? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">수 양제가 요동성 함락 못하자 별동대로 평양성 직공 → 을지문덕이 살수(청천강)로 유인해 수의 별동대 대파 → 고구려 이후 수의 공격 모두 방어</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(3,'o')">O</button><button class="ox-btn x-btn" onclick="mark(3,'x')">X</button></div>
+    </div>
+  </div>
+
+  <div class="section" data-section="s2">
+    <div class="section-title">② 당의 침략을 물리친 고구려 <span class="section-count" id="sc-s2"></span></div>
+    <div class="col-header"><span class="ch-q">문제 / 키워드</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row" data-id="4">
+      <div class="q-cell">연개소문이 정변을 일으킨 배경과 결과는? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">연개소문이 정변으로 권력 획득 → 당이 고구려를 여러 차례 침략</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(4,'o')">O</button><button class="ox-btn x-btn" onclick="mark(4,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="5">
+      <div class="q-cell">안시성 전투(645)란? <span class="star">★</span></div>
+      <div class="a-cell" onclick="revealAnswer(this)">당 태종이 요동성 등 여러 성 함락·안시성 공격 → 연개소문이 지원군 보냈지만 패배 → 안시성 고구려군·백성이 고립됐지만 당군에 맞서 승리</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(5,'o')">O</button><button class="ox-btn x-btn" onclick="mark(5,'x')">X</button></div>
+    </div>
+    <div class="row" data-id="6">
+      <div class="q-cell">당의 전쟁 결과는?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">당은 전쟁에서 패배했지만 소규모 군대를 보내는 전략으로 고구려를 괴롭힘</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(6,'o')">O</button><button class="ox-btn x-btn" onclick="mark(6,'x')">X</button></div>
+    </div>
+  </div>
+
+  <div class="section trap" data-section="s3">
+    <div class="section-title">시험 함정 — 직전 체크 <span class="section-count" id="sc-s3"></span></div>
+    <div class="col-header"><span class="ch-q">함정 포인트</span><span class="ch-a">정답</span><span class="ch-ox">O / X</span></div>
+    <div class="row trap" data-id="7">
+      <div class="q-cell">수는 고구려가 항복 요구를 거절하자 요서 지역 등을 먼저 공격했다?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">X — 먼저 공격한 건 고구려 (선제공격)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(7,'o')">O</button><button class="ox-btn x-btn" onclick="mark(7,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="8">
+      <div class="q-cell">고구려에서 연개소문이 정변을 일으켜 권력을 잡자, 당은 고구려를 여러 차례 침략했다?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">O — 맞음</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(8,'o')">O</button><button class="ox-btn x-btn" onclick="mark(8,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="9">
+      <div class="q-cell">살수 대첩에서 을지문덕은 수의 별동대를 평양성에서 맞서 격파했다?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">X — 살수(청천강)로 유인해 대파 (평양성이 아님)</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(9,'o')">O</button><button class="ox-btn x-btn" onclick="mark(9,'x')">X</button></div>
+    </div>
+    <div class="row trap" data-id="10">
+      <div class="q-cell">안시성 전투에서 연개소문의 지원군이 승리해 당군을 물리쳤다?</div>
+      <div class="a-cell" onclick="revealAnswer(this)">X — 지원군은 패배. 안시성의 고구려군과 백성들이 자체적으로 당군에 맞서 승리</div>
+      <div class="ox-cell"><button class="ox-btn o-btn" onclick="mark(10,'o')">O</button><button class="ox-btn x-btn" onclick="mark(10,'x')">X</button></div>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState"><span style="font-size:40px;display:block;margin-bottom:10px">🎉</span>틀린 문제가 없어요!<br>전체 탭으로 돌아가서 다시 도전해보세요.</div>
+</div>
+<script>
+const TOTAL=10,STORAGE_KEY='goguryeo_scores',scores={};let hiding=true,mode='all';
+function saveScores(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(scores))}catch(e){}}
+function loadScores(){try{const s=localStorage.getItem(STORAGE_KEY);if(s)Object.assign(scores,JSON.parse(s))}catch(e){}}
+function applyRowState(id){const row=document.querySelector(`.row[data-id="${id}"]`);if(!row)return;const r=scores[id]||null;row.classList.toggle('correct',r==='o');row.classList.toggle('wrong',r==='x');row.querySelectorAll('.o-btn').forEach(b=>b.classList.toggle('selected',r==='o'));row.querySelectorAll('.x-btn').forEach(b=>b.classList.toggle('selected',r==='x'))}
+function revealAnswer(el){el.classList.toggle('hide')}
+function mark(id,result){scores[id]=scores[id]===result?null:result;saveScores();applyRowState(id);updateProgress();if(mode==='wrong')applyModeFilter()}
+function updateProgress(){let o=0,x=0;Object.values(scores).forEach(v=>{if(v==='o')o++;else if(v==='x')x++});document.getElementById('progressFill').style.width=Math.round((o+x)/TOTAL*100)+'%';document.getElementById('cnt-o').textContent=o;document.getElementById('cnt-x').textContent=x;document.getElementById('cnt-skip').textContent=TOTAL-o-x;document.querySelectorAll('.section').forEach(sec=>{const sid=sec.dataset.section;const rows=sec.querySelectorAll('.row');let so=0,sx=0;rows.forEach(r=>{const rid=parseInt(r.dataset.id);if(scores[rid]==='o')so++;else if(scores[rid]==='x')sx++});const el=document.getElementById('sc-'+sid);if(el)el.textContent=`(O:${so} X:${sx} 미:${rows.length-so-sx})`})}
+function applyModeFilter(){document.querySelectorAll('.row').forEach(row=>{const id=parseInt(row.dataset.id);if(mode==='wrong')row.classList.toggle('hidden-row',scores[id]==='o');else row.classList.remove('hidden-row')});document.querySelectorAll('.section').forEach(sec=>{const visible=sec.querySelectorAll('.row:not(.hidden-row)').length;sec.style.display=(mode==='wrong'&&visible===0)?'none':''});const xCount=Object.values(scores).filter(v=>v==='x').length;document.getElementById('emptyState').style.display=(mode==='wrong'&&xCount===0)?'block':'none'}
+function setMode(m){mode=m;document.getElementById('tab-all').classList.toggle('active',m==='all');document.getElementById('tab-wrong').classList.toggle('active',m==='wrong');applyModeFilter()}
+function toggleAll(){hiding=!hiding;const btn=document.getElementById('floatToggle');btn.textContent=hiding?'정답 가리기 ON':'정답 가리기 OFF';btn.classList.toggle('off',!hiding);document.querySelectorAll('.a-cell').forEach(el=>hiding?el.classList.add('hide'):el.classList.remove('hide'))}
+function resetAll(){if(!confirm('모든 O/X 기록을 초기화할까요?'))return;Object.keys(scores).forEach(k=>delete scores[k]);saveScores();for(let i=1;i<=TOTAL;i++)applyRowState(i);updateProgress();applyModeFilter()}
+loadScores();document.querySelectorAll('.a-cell').forEach(el=>el.classList.add('hide'));for(let i=1;i<=TOTAL;i++)applyRowState(i);updateProgress();
+</script>
+</body>
+</html>
