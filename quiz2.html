@@ -394,13 +394,12 @@ async function submitAnswer() {
 반드시 아래 JSON 형식으로만 응답하세요:
 {"verdict":"correct/partial/wrong","feedback":"한 두 문장으로 구체적인 피드백 (한국어)"}`;
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://round-sky-c8f1.leavewithu.workers.dev', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
