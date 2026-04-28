@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>오답 트레이닝</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --border: #2a2d3e;
+    --accent: #e8634a;
+    --accent2: #4a9eff;
+    --text: #e8eaf0;
+    --muted: #8b8fa8;
+    --o-color: #3ecf8e;
+    --x-color: #e8634a;
+    --hide-bg: #2a2d3e;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    padding-bottom: 80px;
+  }
+
+  /* 헤더 */
+  .header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(15,17,23,0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px 8px;
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .title { font-size: 16px; font-weight: 700; color: var(--accent); }
+  .tabs { display: flex; gap: 6px; }
+  .tab {
+    padding: 5px 14px; border-radius: 20px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 13px; cursor: pointer;
+    transition: all .2s;
+  }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tab.reset { border-color: #444; }
+  .tab.reset:active { background: #333; }
+
+  /* 진행률 */
+  .progress-wrap { margin-top: 6px; }
+  .progress-bar {
+    height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; margin-bottom: 6px;
+  }
+  .progress-fill { height: 100%; background: var(--o-color); border-radius: 2px; transition: width .4s; }
+  .progress-stats { display: flex; gap: 12px; font-size: 12px; }
+  .stat-o { color: var(--o-color); }
+  .stat-x { color: var(--x-color); }
+  .stat-s { color: var(--muted); }
+
+  /* 섹션 */
+  .section { margin: 16px 12px 0; }
+  .section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 1px;
+    color: var(--muted); text-transform: uppercase;
+    padding: 0 4px 8px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .section-title span { font-size: 10px; color: var(--muted); font-weight: 400; letter-spacing: 0; }
+
+  /* 문제 카드 */
+  .row {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-top: 8px;
+    overflow: hidden;
+    transition: border-color .2s, opacity .3s;
+  }
+  .row.correct { border-color: var(--o-color); }
+  .row.wrong { border-color: var(--x-color); }
+  .row.hidden-row { display: none; }
+
+  .q-cell {
+    padding: 12px 14px 10px;
+    font-size: 14px; line-height: 1.6;
+    background: var(--card);
+  }
+  .q-label {
+    font-size: 10px; color: var(--accent2); font-weight: 700;
+    letter-spacing: .5px; margin-bottom: 4px;
+  }
+  .q-text { color: var(--text); }
+  .q-sub {
+    font-size: 12px; color: var(--muted); margin-top: 6px;
+    padding: 8px 10px; background: rgba(255,255,255,0.04);
+    border-radius: 6px; line-height: 1.7;
+  }
+
+  .a-cell {
+    padding: 10px 14px;
+    font-size: 14px; line-height: 1.6;
+    background: rgba(232,99,74,0.06);
+    border-top: 1px solid var(--border);
+    cursor: pointer;
+    position: relative;
+    transition: background .2s;
+  }
+  .a-cell.hide {
+    background: var(--hide-bg);
+    color: transparent;
+    user-select: none;
+  }
+  .a-cell.hide::after {
+    content: '탭하여 정답 확인';
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-size: 12px;
+  }
+  .a-label {
+    font-size: 10px; color: var(--o-color); font-weight: 700;
+    letter-spacing: .5px; margin-bottom: 3px;
+  }
+  .a-cell.hide .a-label { color: transparent; }
+
+  .btn-row {
+    display: flex;
+    border-top: 1px solid var(--border);
+  }
+  .o-btn, .x-btn {
+    flex: 1; padding: 10px;
+    background: transparent; border: none; cursor: pointer;
+    font-size: 16px; font-weight: 700;
+    color: var(--muted); transition: all .15s;
+  }
+  .o-btn { border-right: 1px solid var(--border); }
+  .o-btn:active, .o-btn.selected { background: rgba(62,207,142,0.15); color: var(--o-color); }
+  .x-btn:active, .x-btn.selected { background: rgba(232,99,74,0.15); color: var(--x-color); }
+
+  /* 빈 상태 */
+  .empty {
+    display: none; text-align: center; padding: 60px 20px;
+    color: var(--muted); font-size: 14px;
+  }
+  .empty .icon { font-size: 40px; margin-bottom: 12px; }
+
+  /* 플로팅 버튼 */
+  .float-btn {
+    position: fixed; bottom: 24px; right: 20px;
+    padding: 12px 20px; border-radius: 24px;
+    background: var(--accent2); color: #fff; border: none;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    box-shadow: 0 4px 20px rgba(74,158,255,0.4);
+    transition: all .2s;
+  }
+  .float-btn.off {
+    background: var(--border); color: var(--muted);
+    box-shadow: none;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="title">⚡ 오답 트레이닝</div>
+    <div class="tabs">
+      <button class="tab active" id="tab-all" onclick="setMode('all')">전체</button>
+      <button class="tab" id="tab-wrong" onclick="setMode('wrong')">오답만</button>
+      <button class="tab reset" onclick="resetAll()">초기화</button>
+    </div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-stats">
+      <span class="stat-o">O: <b id="cnt-o">0</b></span>
+      <span class="stat-x">X: <b id="cnt-x">0</b></span>
+      <span class="stat-s">미채점: <b id="cnt-skip">0</b></span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 섹션: 삼국 항쟁 ===== -->
+<div class="section" data-section="s1">
+  <div class="section-title">삼국 항쟁 &amp; 통일 과정 <span id="sc-s1"></span></div>
+
+  <div class="row" data-id="1">
+    <div class="q-cell">
+      <div class="q-label">객관식</div>
+      <div class="q-text">다음 명령을 내린 왕에 대한 설명으로 옳은 것만을 &lt;보기&gt;에서 고른 것은?</div>
+      <div class="q-sub">
+        "이제 사비로 수도를 옮겨 자랑스러운 이 나라의 영광을 되찾고자 한다. 수도를 옮길 준비를 하라."<br><br>
+        ㄱ. 불교를 공인했다.<br>
+        ㄴ. 국호를 남부여로 바꿨다.<br>
+        ㄷ. 가야, 왜와 연합해 신라를 공격했다.<br>
+        ㄹ. 지방에 왕족을 파견해 지방 통제를 강화했다.
+      </div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      ④ ㄴ, ㄹ — 백제 성왕 (사비 천도, 국호 남부여 개칭, 22담로에 왕족 파견)
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(1,'o')">O</button>
+      <button class="x-btn" onclick="mark(1,'x')">X</button>
+    </div>
+  </div>
+
+  <div class="row" data-id="2">
+    <div class="q-cell">
+      <div class="q-label">단답형</div>
+      <div class="q-text">다음 글의 (가)에 들어갈 알맞은 말을 쓰시오.</div>
+      <div class="q-sub">
+        부여씨(백제)가 망하고 고씨(고구려)가 망하자, 김씨(신라)가 그 남쪽 땅을 차지하고 대씨가 그 북쪽 땅을 차지해 발해를 세웠다. 이것을 (가)(이)라 한다. — 유득공, 『발해고』
+      </div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      남북국 (신라+발해가 공존한 시대를 남북국 시대라 함)
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(2,'o')">O</button>
+      <button class="x-btn" onclick="mark(2,'x')">X</button>
+    </div>
+  </div>
+
+  <div class="row" data-id="3">
+    <div class="q-cell">
+      <div class="q-label">연결형</div>
+      <div class="q-text">서로 관련 있는 내용끼리 연결하시오.</div>
+      <div class="q-sub">
+        (1) 복신 — (2) 고연무 — (3) 흑치상지 — (4) 안승<br>
+        ㄱ. 고구려 부흥 운동 &nbsp;|&nbsp; ㄴ. 백제 부흥 운동
+      </div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      복신→ㄴ(백제) / 고연무→ㄱ(고구려) / 흑치상지→ㄴ(백제) / 안승→ㄱ(고구려)
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(3,'o')">O</button>
+      <button class="x-btn" onclick="mark(3,'x')">X</button>
+    </div>
+  </div>
+
+  <div class="row" data-id="4">
+    <div class="q-cell">
+      <div class="q-label">객관식</div>
+      <div class="q-text">(가)와 (나) 사이에 있었던 사실로 옳은 것은?</div>
+      <div class="q-sub">
+        (가) 수 문제가 고구려를 공격했지만, 홍수와 전염병 등으로 피해를 보고 퇴각했다.<br>
+        (나) 잦은 대외 원정과 대운하 등의 토목 공사로 국력이 약해진 수가 멸망했다.<br><br>
+        ① 수가 중국을 통일했다.<br>
+        ② 신라가 당과 동맹을 맺었다.<br>
+        ③ 연개소문이 정변을 일으켜 권력을 잡았다.<br>
+        ④ 을지문덕이 살수 대첩에서 수를 크게 물리쳤다.<br>
+        ⑤ 당이 돌궐을 비롯한 유목 민족 국가들을 제압했다.
+      </div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      ④ 을지문덕 살수 대첩 — 수 문제 침입(598) → 살수 대첩(612) → 수 멸망(618) 순서
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(4,'o')">O</button>
+      <button class="x-btn" onclick="mark(4,'x')">X</button>
+    </div>
+  </div>
+
+  <div class="row" data-id="5">
+    <div class="q-cell">
+      <div class="q-label">객관식 (지도)</div>
+      <div class="q-text">645년 당 태종 침입 지도에서 (가) 전투에 대한 설명으로 옳은 것은?</div>
+      <div class="q-sub">
+        ① 백제와 왜의 연합군이 참여했다.<br>
+        ② 고연무가 오골성에서 당군과 싸웠다.<br>
+        ③ 고구려군이 당 태종의 군대에 승리했다.<br>
+        ④ 평양성을 직접 공격하는 별동대와의 전투이다.<br>
+        ⑤ 나당 연합군과 백제 부흥 운동 세력의 전투이다.
+      </div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      ③ — (가)는 안시성 전투. 고구려 양만춘이 당 태종의 군대를 물리침 (645)
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(5,'o')">O</button>
+      <button class="x-btn" onclick="mark(5,'x')">X</button>
+    </div>
+  </div>
+
+  <div class="row" data-id="6">
+    <div class="q-cell">
+      <div class="q-label">연표 선택</div>
+      <div class="q-text">다음 전투(백강 전투)가 일어난 시기를 연표에서 옳게 고른 것은?</div>
+      <div class="q-sub">
+        "백강 어귀에서 왜인과 네 번 싸워서 모두 이기고 그들의 배 400척을 불태우니…왕 부여풍은 몸을 빼서 달아났다." — 삼국사기<br><br>
+        (가)수·중국통일 → (나)살수대첩 → (다)안시성전투 → (라)나당동맹결성 → (마)나당전쟁발발 → 신라삼국통일
+      </div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      ④ (라) — 백강 전투(663)는 나당 동맹 결성(648) 이후, 나당 전쟁 발발(675) 이전
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(6,'o')">O</button>
+      <button class="x-btn" onclick="mark(6,'x')">X</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ===== 섹션: 발해 ===== -->
+<div class="section" data-section="s2">
+  <div class="section-title">발해 <span id="sc-s2"></span></div>
+
+  <div class="row" data-id="7">
+    <div class="q-cell">
+      <div class="q-label">객관식 (유물)</div>
+      <div class="q-text">(가) 국가에 대한 설명으로 옳은 것만을 &lt;보기&gt;에서 고른 것은?</div>
+      <div class="q-sub">
+        (가)의 유물: 러시아에서 발견된 청동 부절. '섭리계 (가) 장군'이라는 글씨가 쓰여 있음 (말갈계 발해 장군의 이름)<br><br>
+        ㄱ. 다양한 민족으로 구성된 다민족 국가이다.<br>
+        ㄴ. 고구려 땅 일부를 제외한 삼국을 통일했다.<br>
+        ㄷ. 거란인, 말갈인을 강제로 이주시켜 지배했다.<br>
+        ㄹ. 지배층의 중심은 고구려 유민과 말갈인이었다.
+      </div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      ④ ㄴ, ㄹ — 발해는 고구려 유민+말갈인 다민족 국가. ㄴ은 신라에 대한 설명.
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(7,'o')">O</button>
+      <button class="x-btn" onclick="mark(7,'x')">X</button>
+    </div>
+  </div>
+
+  <div class="row" data-id="8">
+    <div class="q-cell">
+      <div class="q-label">서술형 (1)</div>
+      <div class="q-text">나당 전쟁에서 당이 한반도에 있던 병력 일부를 서역으로 보낸 배경(밑줄 ㉠의 배경)을 쓰시오.</div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      당이 토번(티베트) 등 서역 세력의 침략을 받아 대응하기 위해 한반도 병력을 서역으로 이동시켰기 때문이다.
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(8,'o')">O</button>
+      <button class="x-btn" onclick="mark(8,'x')">X</button>
+    </div>
+  </div>
+
+  <div class="row" data-id="9">
+    <div class="q-cell">
+      <div class="q-label">서술형 (2)</div>
+      <div class="q-text">신라의 삼국 통일(밑줄 ㉡)의 의의와 한계를 각각 서술하시오.</div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      <b>의의:</b> 외세(당)를 몰아내고 자주적 통일을 이루었으며, 민족 문화 발전의 기반이 됨.<br>
+      <b>한계:</b> 고구려의 넓은 영토 대부분을 잃어 영토가 대동강 이남으로 축소됨. (고구려 땅 일부 제외한 통일)
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(9,'o')">O</button>
+      <button class="x-btn" onclick="mark(9,'x')">X</button>
+    </div>
+  </div>
+
+  <div class="row" data-id="10">
+    <div class="q-cell">
+      <div class="q-label">서술형</div>
+      <div class="q-text">발해 건국자 인터뷰: "저는 (가) 유민으로 힘든 시간을 보냈습니다. 발해는 (가)의 뒤를 이어 강한 국가로 성장할 것입니다."<br><br>
+      (1) (가) 국가의 명칭을 쓰시오.<br>
+      (2) 발해가 (가)를 계승한 근거를 2가지 서술하시오.
+      </div>
+    </div>
+    <div class="a-cell hide" onclick="revealAnswer(this)">
+      <div class="a-label">정답</div>
+      (1) 고구려<br>
+      (2) ① 건국 주도 세력이 고구려 유민(대조영)이었다.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;② 지배층의 중심이 고구려 유민이었다.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;③ 일본에 보낸 국서에 스스로 '고구려'라 칭했다.<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;④ 고구려의 문화(온돌, 기와 양식 등)를 계승했다.
+    </div>
+    <div class="btn-row">
+      <button class="o-btn" onclick="mark(10,'o')">O</button>
+      <button class="x-btn" onclick="mark(10,'x')">X</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="empty" id="emptyState">
+  <div class="icon">🎉</div>
+  오답이 없어요! 모두 맞혔어요.
+</div>
+
+<button class="float-btn" id="floatToggle" onclick="toggleAll()">정답 가리기 ON</button>
+
+<script>
+const TOTAL = 10;
+const STORAGE_KEY = 'quiz_wrong_v1';
+const scores = {};
+let hiding = true;
+let mode = 'all';
+
+function saveScores() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(scores)); } catch(e) {}
+}
+function loadScores() {
+  try {
+    const d = localStorage.getItem(STORAGE_KEY);
+    if (d) Object.assign(scores, JSON.parse(d));
+  } catch(e) {}
+}
+
+function revealAnswer(el) { el.classList.toggle('hide'); }
+
+function applyRowState(id) {
+  const row = document.querySelector(`.row[data-id="${id}"]`);
+  if (!row) return;
+  const v = scores[id];
+  const oBtns = row.querySelectorAll('.o-btn');
+  const xBtns = row.querySelectorAll('.x-btn');
+  row.classList.toggle('correct', v === 'o');
+  row.classList.toggle('wrong', v === 'x');
+  oBtns.forEach(b => b.classList.toggle('selected', v === 'o'));
+  xBtns.forEach(b => b.classList.toggle('selected', v === 'x'));
+}
+
+function mark(id, result) {
+  if (scores[id] === result) { delete scores[id]; }
+  else { scores[id] = result; }
+  saveScores();
+  applyRowState(id);
+  updateProgress();
+  if (mode === 'wrong') applyModeFilter();
+}
+
+function updateProgress() {
+  let o = 0, x = 0;
+  for (let i = 1; i <= TOTAL; i++) {
+    if (scores[i] === 'o') o++;
+    else if (scores[i] === 'x') x++;
+  }
+  const skip = TOTAL - o - x;
+  document.getElementById('progressFill').style.width = Math.round((o+x)/TOTAL*100) + '%';
+  document.getElementById('cnt-o').textContent = o;
+  document.getElementById('cnt-x').textContent = x;
+  document.getElementById('cnt-skip').textContent = skip;
+
+  document.querySelectorAll('.section').forEach(sec => {
+    const sid = sec.dataset.section;
+    const rows = sec.querySelectorAll('.row');
+    let so = 0, sx = 0;
+    rows.forEach(r => {
+      const rid = parseInt(r.dataset.id);
+      if (scores[rid] === 'o') so++;
+      else if (scores[rid] === 'x') sx++;
+    });
+    const el = document.getElementById('sc-' + sid);
+    if (el) el.textContent = `(O:${so} X:${sx} 미:${rows.length-so-sx})`;
+  });
+}
+
+function applyModeFilter() {
+  document.querySelectorAll('.row').forEach(row => {
+    const id = parseInt(row.dataset.id);
+    if (mode === 'wrong') {
+      row.classList.toggle('hidden-row', scores[id] === 'o');
+    } else {
+      row.classList.remove('hidden-row');
+    }
+  });
+  document.querySelectorAll('.section').forEach(sec => {
+    const visible = sec.querySelectorAll('.row:not(.hidden-row)').length;
+    sec.style.display = (mode === 'wrong' && visible === 0) ? 'none' : '';
+  });
+  const xCount = Object.values(scores).filter(v => v === 'x').length;
+  const unanswered = TOTAL - Object.keys(scores).length;
+  document.getElementById('emptyState').style.display =
+    (mode === 'wrong' && xCount === 0 && unanswered === 0) ? 'block' : 'none';
+}
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('tab-all').classList.toggle('active', m === 'all');
+  document.getElementById('tab-wrong').classList.toggle('active', m === 'wrong');
+  applyModeFilter();
+}
+
+function toggleAll() {
+  hiding = !hiding;
+  const btn = document.getElementById('floatToggle');
+  btn.textContent = hiding ? '정답 가리기 ON' : '정답 가리기 OFF';
+  btn.classList.toggle('off', !hiding);
+  document.querySelectorAll('.a-cell').forEach(el => {
+    if (hiding) el.classList.add('hide');
+    else el.classList.remove('hide');
+  });
+}
+
+function resetAll() {
+  if (!confirm('모든 O/X 기록을 초기화할까요?')) return;
+  for (let i = 1; i <= TOTAL; i++) delete scores[i];
+  saveScores();
+  for (let i = 1; i <= TOTAL; i++) applyRowState(i);
+  updateProgress();
+  applyModeFilter();
+}
+
+// 초기화
+loadScores();
+document.querySelectorAll('.a-cell').forEach(el => el.classList.add('hide'));
+for (let i = 1; i <= TOTAL; i++) applyRowState(i);
+updateProgress();
+</script>
+</body>
+</html>
